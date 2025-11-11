@@ -21,10 +21,12 @@ export class AuthService {
     }
 
     const user = await this.usersService.create(email, password);
+    const payload = { sub: user.id, email: user.email };
+    const accessToken = this.jwtService.sign(payload);
 
     return {
-      message: 'Registration successful',
-      email: user.email,
+      access_token: accessToken,
+      user,
     };
   }
 
@@ -39,15 +41,13 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { sub: user.id, email: user.email };
+    const safeUser = this.usersService.toSafeUser(user);
+    const payload = { sub: safeUser.id, email: safeUser.email };
     const accessToken = this.jwtService.sign(payload);
 
     return {
       access_token: accessToken,
-      user: {
-        id: user.id,
-        email: user.email,
-      },
+      user: safeUser,
     };
   }
 

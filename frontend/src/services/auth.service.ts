@@ -7,9 +7,11 @@ import {
 } from '../types/auth.types';
 
 export const authService = {
-  register: (data: RegisterData) => api.post<AuthResponse>('/auth/register', data),
-  login: (data: LoginData) => api.post<AuthResponse>('/auth/login', data),
-  getProfile: () => api.get<User>('/auth/profile'),
+  register: (data: RegisterData) =>
+    api.post<AuthResponse, AuthResponse>('/auth/register', data),
+  login: (data: LoginData) =>
+    api.post<AuthResponse, AuthResponse>('/auth/login', data),
+  getProfile: () => api.get<User, User>('/auth/profile'),
   logout: () => {
     localStorage.removeItem('flowforge_token');
     window.location.href = '/login';

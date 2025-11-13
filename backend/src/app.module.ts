@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { WorkflowsModule } from './workflows/workflows.module';
 
 const mongoUri = process.env.MONGODB_URI ?? 'mongodb://localhost:27017/flowforge';
 
@@ -13,6 +14,7 @@ const mongoUri = process.env.MONGODB_URI ?? 'mongodb://localhost:27017/flowforge
     MongooseModule.forRoot(mongoUri),
     UsersModule,
     AuthModule,
+    WorkflowsModule,
   ],
   controllers: [AppController],
   providers: [],

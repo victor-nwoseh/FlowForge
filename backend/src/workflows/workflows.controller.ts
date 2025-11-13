@@ -22,20 +22,17 @@ export class WorkflowsController {
 
   @Post()
   create(@Body() createWorkflowDto: CreateWorkflowDto, @Request() req: any) {
-    return this.workflowsService.create(
-      req.user.userId,
-      createWorkflowDto,
-    );
+    return this.workflowsService.create(req.user.id, createWorkflowDto);
   }
 
   @Get()
   findAll(@Request() req: any) {
-    return this.workflowsService.findAll(req.user.userId);
+    return this.workflowsService.findAll(req.user.id);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req: any) {
-    return this.workflowsService.findOne(id, req.user.userId);
+    return this.workflowsService.findOne(id, req.user.id);
   }
 
   @Put(':id')
@@ -44,16 +41,12 @@ export class WorkflowsController {
     @Body() updateWorkflowDto: UpdateWorkflowDto,
     @Request() req: any,
   ) {
-    return this.workflowsService.update(
-      id,
-      req.user.userId,
-      updateWorkflowDto,
-    );
+    return this.workflowsService.update(id, req.user.id, updateWorkflowDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string, @Request() req: any) {
-    return this.workflowsService.delete(id, req.user.userId);
+    return this.workflowsService.delete(id, req.user.id);
   }
 }
 

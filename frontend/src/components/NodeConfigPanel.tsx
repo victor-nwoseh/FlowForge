@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 import Button from './Button';
 import Input from './Input';
@@ -20,6 +21,7 @@ const ACTION_OPTIONS = [
 const NodeConfigPanel = () => {
   const selectedNode = useWorkflowStore((state) => state.selectedNode);
   const updateNode = useWorkflowStore((state) => state.updateNode);
+  const deleteNode = useWorkflowStore((state) => state.deleteNode);
   const setSelectedNode = useWorkflowStore((state) => state.setSelectedNode);
 
   const [label, setLabel] = useState('');
@@ -51,14 +53,29 @@ const NodeConfigPanel = () => {
     };
 
     updateNode(selectedNode.id, { data: updatedData });
-    setSelectedNode({
-      ...selectedNode,
-      data: updatedData,
-    });
+    toast.success('Node changes saved successfully');
+    handleClose();
   };
 
   const handleClose = () => {
     setSelectedNode(null);
+  };
+
+  const handleDelete = () => {
+    if (!selectedNode) {
+      return;
+    }
+
+    const shouldDelete =
+      window.confirm('Are you sure you want to delete this node?');
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    deleteNode(selectedNode.id);
+    toast.success('Node deleted successfully');
+    handleClose();
   };
 
   const renderTypeSpecificFields = () => {
@@ -207,10 +224,13 @@ const NodeConfigPanel = () => {
       </div>
 
       <div className="flex items-center gap-3 border-t border-gray-200 p-4">
-        <Button onClick={handleSave} disabled={!label}>
+        <Button variant="danger" onClick={handleDelete} className="flex-1">
+          Delete Node
+        </Button>
+        <Button onClick={handleSave} disabled={!label} className="flex-1">
           Save Changes
         </Button>
-        <Button variant="secondary" onClick={handleClose}>
+        <Button variant="secondary" onClick={handleClose} className="flex-1">
           Cancel
         </Button>
       </div>

@@ -6,6 +6,14 @@ import type {
   WorkflowNode,
 } from '../types/workflow.types';
 
+type NodesUpdater =
+  | WorkflowNode[]
+  | ((nodes: WorkflowNode[]) => WorkflowNode[]);
+
+type EdgesUpdater =
+  | WorkflowEdge[]
+  | ((edges: WorkflowEdge[]) => WorkflowEdge[]);
+
 interface WorkflowState {
   currentWorkflow: Workflow | null;
   workflows: Workflow[];
@@ -14,8 +22,8 @@ interface WorkflowState {
   selectedNode: WorkflowNode | null;
   setCurrentWorkflow: (workflow: Workflow | null) => void;
   setWorkflows: (workflows: Workflow[]) => void;
-  setNodes: (nodes: WorkflowNode[]) => void;
-  setEdges: (edges: WorkflowEdge[]) => void;
+  setNodes: (nodes: NodesUpdater) => void;
+  setEdges: (edges: EdgesUpdater) => void;
   addNode: (node: WorkflowNode) => void;
   updateNode: (id: string, data: Partial<WorkflowNode>) => void;
   deleteNode: (id: string) => void;
@@ -50,8 +58,20 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
   ...initialState,
   setCurrentWorkflow: (workflow) => set({ currentWorkflow: workflow }),
   setWorkflows: (workflows) => set({ workflows }),
-  setNodes: (nodes) => set({ nodes }),
-  setEdges: (edges) => set({ edges }),
+  setNodes: (nodes) =>
+    set((state) => ({
+      nodes:
+        typeof nodes === 'function'
+          ? (nodes as (current: WorkflowNode[]) => WorkflowNode[])(state.nodes)
+          : nodes,
+    })),
+  setEdges: (edges) =>
+    set((state) => ({
+      edges:
+        typeof edges === 'function'
+          ? (edges as (current: WorkflowEdge[]) => WorkflowEdge[])(state.edges)
+          : edges,
+    })),
   addNode: (node) =>
     set((state) => ({
       nodes: [...state.nodes, node],

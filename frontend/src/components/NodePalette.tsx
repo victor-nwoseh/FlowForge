@@ -101,14 +101,10 @@ const NodePalette = () => {
               key={type}
               draggable
               onDragStart={(event) => onDragStart(event, type)}
-              className="group flex cursor-pointer items-center gap-3 rounded-lg border border-transparent bg-gradient-to-r p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-              style={{
-                borderColor: 'rgba(255, 255, 255, 0.4)',
-                backgroundImage: `linear-gradient(to right, var(--tw-gradient-stops))`,
-              }}
+              className={`group flex cursor-pointer items-center gap-3 rounded-lg border border-white/20 bg-gradient-to-r p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${color}`}
             >
               <div
-                className={`flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white ${color}`}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white"
               >
                 <Icon size={20} />
               </div>

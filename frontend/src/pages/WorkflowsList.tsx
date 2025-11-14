@@ -42,11 +42,21 @@ const WorkflowsList = () => {
     );
   }
 
+  if (isError) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-600">
+          Failed to load workflows. Please try again later.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-gray-900">My Workflows</h1>
-        <Button onClick={handleCreateNew} icon={Plus}>
+        <Button onClick={handleCreateNew} icon={Plus} className="w-auto">
           Create New
         </Button>
       </div>
@@ -82,7 +92,10 @@ const WorkflowsList = () => {
                 {workflow.description || 'No description provided.'}
               </p>
               <span className="mt-auto text-xs text-gray-400">
-                Created {new Date(workflow.createdAt ?? '').toLocaleDateString()}
+                Created{' '}
+                {workflow.createdAt
+                  ? new Date(workflow.createdAt).toLocaleDateString()
+                  : '—'}
               </span>
             </div>
           ))}

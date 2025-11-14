@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import WorkflowsList from './pages/WorkflowsList';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import { useAuthStore } from './store/auth.store';
@@ -24,7 +25,8 @@ const App: React.FC = () => {
           <Route path="/" element={<Navigate to="/workflows" replace />} />
 
           <Route element={<ProtectedRoute />}>
-            <Route path="/workflows" element={<Dashboard />} />
+            <Route path="/workflows" element={<WorkflowsList />} />
+            <Route path="/dashboard" element={<Dashboard />} />
           </Route>
         </Routes>
       </main>

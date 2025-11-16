@@ -21,6 +21,7 @@ import Input from '../components/Input';
 import CustomNode from '../components/CustomNode';
 import NodeConfigPanel from '../components/NodeConfigPanel';
 import NodePalette from '../components/NodePalette';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { useWorkflowStore } from '../store/workflow.store';
 import workflowService from '../services/workflow.service';
 import { generateEdgeId, generateNodeId } from '../utils/workflow.utils';
@@ -29,6 +30,7 @@ import type {
   WorkflowEdge,
   WorkflowNode,
 } from '../types/workflow.types';
+import '../styles/workflow.css';
 
 const nodeTypes = {
   custom: CustomNode,
@@ -70,6 +72,7 @@ const WorkflowBuilder = () => {
   const [reactFlowInstance, setReactFlowInstance] =
     useState<ReactFlowInstance | null>(null);
   const [fitViewRequest, setFitViewRequest] = useState(0);
+  const [isLoadingWorkflow, setIsLoadingWorkflow] = useState(false);
 
   const scheduleFitView = useCallback(() => {
     shouldFitViewRef.current = true;
@@ -92,6 +95,7 @@ const WorkflowBuilder = () => {
   useEffect(() => {
     shouldFitViewRef.current = true;
     isLoadingWorkflowRef.current = true;
+    setIsLoadingWorkflow(Boolean(workflowId));
   }, [workflowId]);
 
   useEffect(() => {
@@ -118,6 +122,7 @@ const WorkflowBuilder = () => {
         console.error(error);
       } finally {
         isLoadingWorkflowRef.current = false;
+        setIsLoadingWorkflow(false);
         scheduleFitView();
       }
     };
@@ -141,6 +146,7 @@ const WorkflowBuilder = () => {
       setCurrentWorkflow(null);
       setSelectedNode(null);
       isLoadingWorkflowRef.current = false;
+      setIsLoadingWorkflow(false);
       scheduleFitView();
     }
   }, [
@@ -381,6 +387,11 @@ const WorkflowBuilder = () => {
           </div>
         </header>
         <div className="relative flex flex-1">
+          {isLoadingWorkflow ? (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-sm">
+              <LoadingSpinner />
+            </div>
+          ) : null}
           <div
             className="h-full flex-1 bg-slate-100"
             ref={reactFlowWrapper}
@@ -396,6 +407,12 @@ const WorkflowBuilder = () => {
               onDragOver={onDragOver}
               onNodeClick={handleNodeClick}
               onInit={setReactFlowInstance}
+              defaultEdgeOptions={{
+                type: 'smoothstep',
+                animated: false,
+                style: { stroke: '#94a3b8', strokeWidth: 2 },
+              }}
+              connectionLineStyle={{ stroke: '#6366f1', strokeWidth: 2, strokeDasharray: '5 5' }}
               fitView
             >
               <Background variant="lines" gap={24} color="#cbd5f5" />

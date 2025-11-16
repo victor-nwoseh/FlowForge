@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import { Plus } from 'lucide-react';
 
 import Button from '../components/Button';
+import LoadingSpinner from '../components/LoadingSpinner';
+import EmptyState from '../components/EmptyState';
 import workflowService from '../services/workflow.service';
 
 const WorkflowsList = () => {
@@ -36,8 +38,8 @@ const WorkflowsList = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <span className="text-sm text-gray-500">Loading workflows...</span>
+      <div className="flex flex-1 items-center justify-center">
+        <LoadingSpinner />
       </div>
     );
   }
@@ -62,9 +64,12 @@ const WorkflowsList = () => {
       </div>
 
       {workflows.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-gray-500">
-          No workflows yet. Create your first workflow!
-        </div>
+        <EmptyState
+          title="No workflows yet"
+          description="Create your first workflow to start automating tasks across your tools."
+          actionLabel="Create Workflow"
+          onAction={handleCreateNew}
+        />
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {workflows.map((workflow) => (

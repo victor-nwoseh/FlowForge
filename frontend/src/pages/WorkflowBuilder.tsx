@@ -23,6 +23,7 @@ import NodeConfigPanel from '../components/NodeConfigPanel';
 import NodePalette from '../components/NodePalette';
 import { useWorkflowStore } from '../store/workflow.store';
 import workflowService from '../services/workflow.service';
+import { generateEdgeId, generateNodeId } from '../utils/workflow.utils';
 import type {
   Workflow,
   WorkflowEdge,
@@ -229,7 +230,7 @@ const WorkflowBuilder = () => {
       }
 
       const newEdge: WorkflowEdge = {
-        id: `${connection.source}-${connection.target}-${Date.now()}`,
+        id: generateEdgeId(connection.source, connection.target),
         source: connection.source,
         target: connection.target,
         type: connection.type,
@@ -266,7 +267,7 @@ const WorkflowBuilder = () => {
           y: event.clientY - reactFlowBounds.top,
         });
 
-        const id = `node-${Date.now()}`;
+        const id = generateNodeId();
         const newNode: WorkflowNode = {
           id,
           type: 'custom',

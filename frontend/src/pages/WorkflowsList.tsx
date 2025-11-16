@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -11,6 +11,7 @@ import workflowService from '../services/workflow.service';
 
 const WorkflowsList = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const {
     data: workflows = [],
@@ -20,6 +21,17 @@ const WorkflowsList = () => {
   } = useQuery({
     queryKey: ['workflows'],
     queryFn: workflowService.getAll,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => workflowService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workflows'] });
+      toast.success('Workflow deleted');
+    },
+    onError: () => {
+      toast.error('Failed to delete workflow');
+    },
   });
 
   useEffect(() => {
@@ -34,6 +46,25 @@ const WorkflowsList = () => {
 
   const handleOpenWorkflow = (id: string) => {
     navigate(`/workflows/${id}`);
+  };
+
+  const handleDeleteWorkflow = (
+    event: React.MouseEvent,
+    id: string | undefined,
+  ) => {
+    event.stopPropagation();
+    if (!id) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this workflow? This action cannot be undone.',
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    deleteMutation.mutate(id);
   };
 
   if (isLoading) {
@@ -89,9 +120,21 @@ const WorkflowsList = () => {
                 <h2 className="text-lg font-semibold text-gray-900">
                   {workflow.name}
                 </h2>
-                <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase text-indigo-600">
-                  {workflow.nodes.length} nodes
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase text-indigo-600">
+                    {workflow.nodes.length} nodes
+                  </span>
+                  <button
+                    type="button"
+                    className="rounded-full p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                    onClick={(event) =>
+                      handleDeleteWorkflow(event, workflow._id ?? undefined)
+                    }
+                    aria-label="Delete workflow"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
               <p className="mb-4 line-clamp-3 text-sm text-gray-600">
                 {workflow.description || 'No description provided.'}

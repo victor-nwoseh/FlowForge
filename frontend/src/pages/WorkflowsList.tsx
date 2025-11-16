@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, Copy } from 'lucide-react';
+import { Plus, Trash2, Copy, Search } from 'lucide-react';
 
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -13,6 +13,7 @@ import { generateEdgeId, generateNodeId } from '../utils/workflow.utils';
 const WorkflowsList = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const {
     data: workflows = [],
@@ -121,6 +122,28 @@ const WorkflowsList = () => {
     duplicateMutation.mutate(id);
   };
 
+  const workflowsData = useMemo(
+    () => (Array.isArray(workflows) ? workflows : []),
+    [workflows],
+  );
+
+  const filteredWorkflows = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return workflowsData;
+    }
+
+    const term = searchQuery.trim().toLowerCase();
+    return workflowsData.filter((workflow) => {
+      const nameMatch = workflow.name?.toLowerCase().includes(term);
+      const descriptionMatch = (workflow.description ?? '')
+        .toLowerCase()
+        .includes(term);
+      return nameMatch || descriptionMatch;
+    });
+  }, [workflowsData, searchQuery]);
+
+  const hasFilteredResults = filteredWorkflows.length > 0;
+
   if (isLoading) {
     return (
       <div className="flex flex-1 items-center justify-center">
@@ -141,23 +164,47 @@ const WorkflowsList = () => {
 
   return (
     <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">My Workflows</h1>
-        <Button onClick={handleCreateNew} icon={Plus} className="w-auto">
-          Create New
-        </Button>
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">My Workflows</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage and organize your automated workflows.
+          </p>
+        </div>
+        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex w-full items-center sm:w-64">
+            <Search className="absolute left-3 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search workflows..."
+              className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm text-gray-700 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            />
+          </div>
+          <Button onClick={handleCreateNew} icon={Plus} className="w-auto">
+            Create New
+          </Button>
+        </div>
       </div>
 
-      {workflows.length === 0 ? (
+      {workflowsData.length === 0 ? (
         <EmptyState
           title="No workflows yet"
           description="Create your first workflow to start automating tasks across your tools."
           actionLabel="Create Workflow"
           onAction={handleCreateNew}
         />
+      ) : !hasFilteredResults ? (
+        <EmptyState
+          title="No workflows found"
+          description="Try adjusting your search query or create a new workflow."
+          actionLabel="Reset search"
+          onAction={() => setSearchQuery('')}
+        />
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {workflows.map((workflow) => (
+          {filteredWorkflows.map((workflow) => (
             <div
               key={workflow._id}
               role="button"
@@ -176,7 +223,7 @@ const WorkflowsList = () => {
                 </h2>
                 <div className="flex items-center gap-2">
                   <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase text-indigo-600">
-                    {workflow.nodes.length} nodes
+                    {(workflow.nodes?.length ?? 0).toString()} nodes
                   </span>
                   <div className="flex items-center gap-1">
                     <button

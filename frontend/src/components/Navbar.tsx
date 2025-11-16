@@ -19,6 +19,12 @@ const Navbar: React.FC = () => {
 
         {isAuthenticated ? (
           <div className="flex items-center gap-4">
+            <Link
+              to="/workflows"
+              className="text-sm text-gray-600 transition hover:text-blue-600"
+            >
+              Workflows
+            </Link>
             <span className="text-sm text-gray-600">{user?.email}</span>
             <Button
               variant="secondary"

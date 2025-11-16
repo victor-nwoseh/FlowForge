@@ -2,12 +2,13 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Copy } from 'lucide-react';
 
 import Button from '../components/Button';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import workflowService from '../services/workflow.service';
+import { generateEdgeId, generateNodeId } from '../utils/workflow.utils';
 
 const WorkflowsList = () => {
   const navigate = useNavigate();
@@ -31,6 +32,47 @@ const WorkflowsList = () => {
     },
     onError: () => {
       toast.error('Failed to delete workflow');
+    },
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const workflow = await workflowService.getOne(id);
+      const nodeIdMap = new Map<string, string>();
+
+      const duplicatedNodes = (workflow.nodes ?? []).map((node) => {
+        const newId = generateNodeId();
+        nodeIdMap.set(node.id, newId);
+        return {
+          ...node,
+          id: newId,
+        };
+      });
+
+      const duplicatedEdges = (workflow.edges ?? []).map((edge) => {
+        const newSource = nodeIdMap.get(edge.source) ?? edge.source;
+        const newTarget = nodeIdMap.get(edge.target) ?? edge.target;
+        return {
+          ...edge,
+          id: generateEdgeId(newSource, newTarget),
+          source: newSource,
+          target: newTarget,
+        };
+      });
+
+      return workflowService.create({
+        name: `${workflow.name} (Copy)`,
+        description: workflow.description ?? '',
+        nodes: duplicatedNodes,
+        edges: duplicatedEdges,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workflows'] });
+      toast.success('Workflow duplicated');
+    },
+    onError: () => {
+      toast.error('Failed to duplicate workflow');
     },
   });
 
@@ -65,6 +107,18 @@ const WorkflowsList = () => {
     }
 
     deleteMutation.mutate(id);
+  };
+
+  const handleDuplicateWorkflow = (
+    event: React.MouseEvent,
+    id: string | undefined,
+  ) => {
+    event.stopPropagation();
+    if (!id) {
+      return;
+    }
+
+    duplicateMutation.mutate(id);
   };
 
   if (isLoading) {
@@ -124,16 +178,28 @@ const WorkflowsList = () => {
                   <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase text-indigo-600">
                     {workflow.nodes.length} nodes
                   </span>
-                  <button
-                    type="button"
-                    className="rounded-full p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
-                    onClick={(event) =>
-                      handleDeleteWorkflow(event, workflow._id ?? undefined)
-                    }
-                    aria-label="Delete workflow"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      className="rounded-full p-2 text-gray-400 transition hover:bg-indigo-50 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
+                      onClick={(event) =>
+                        handleDuplicateWorkflow(event, workflow._id ?? undefined)
+                      }
+                      aria-label="Duplicate workflow"
+                    >
+                      <Copy size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-full p-2 text-gray-400 transition hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                      onClick={(event) =>
+                        handleDeleteWorkflow(event, workflow._id ?? undefined)
+                      }
+                      aria-label="Delete workflow"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
               <p className="mb-4 line-clamp-3 text-sm text-gray-600">

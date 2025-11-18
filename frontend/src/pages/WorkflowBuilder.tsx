@@ -46,6 +46,8 @@ const WorkflowBuilder = () => {
   const shouldFitViewRef = useRef(false);
   const fitViewTimeoutRef = useRef<number | null>(null);
   const fitViewAnimationRef = useRef<number | null>(null);
+  const connectingHandleTypeRef = useRef<'source' | 'target' | null>(null);
+  const invalidConnectionToastShownRef = useRef(false);
 
   const {
     nodes,
@@ -247,6 +249,60 @@ const WorkflowBuilder = () => {
     [addEdgeToStore],
   );
 
+  const isValidConnection = useCallback(
+    (connection: Connection) => {
+      if (connectingHandleTypeRef.current === 'target') {
+        if (!invalidConnectionToastShownRef.current) {
+          toast.error('Start connections from an outgoing handle (bottom).');
+          invalidConnectionToastShownRef.current = true;
+        }
+        connectingHandleTypeRef.current = null;
+        return false;
+      }
+
+      const { source, target } = connection;
+      if (!source || !target) {
+        return false;
+      }
+
+      if (source === target) {
+        if (!invalidConnectionToastShownRef.current) {
+          toast.error('Cannot connect a node to itself.');
+          invalidConnectionToastShownRef.current = true;
+        }
+        return false;
+      }
+
+      const sourceNode = nodes.find((node) => node.id === source);
+      const targetNode = nodes.find((node) => node.id === target);
+
+      if (targetNode?.data.type === 'trigger') {
+        if (!invalidConnectionToastShownRef.current) {
+          toast.error('Trigger nodes cannot have incoming connections.');
+          invalidConnectionToastShownRef.current = true;
+        }
+        connectingHandleTypeRef.current = null;
+        return false;
+      }
+
+      const edgeExists = edges.some(
+        (edge) => edge.source === source && edge.target === target,
+      );
+
+      if (edgeExists) {
+        if (!invalidConnectionToastShownRef.current) {
+          toast.error('This connection already exists.');
+          invalidConnectionToastShownRef.current = true;
+        }
+        connectingHandleTypeRef.current = null;
+        return false;
+      }
+
+      return true;
+    },
+    [edges, nodes],
+  );
+
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
@@ -403,6 +459,15 @@ const WorkflowBuilder = () => {
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
+              isValidConnection={isValidConnection}
+              onConnectStart={(_, params) => {
+                connectingHandleTypeRef.current = params.handleType ?? null;
+                invalidConnectionToastShownRef.current = false;
+              }}
+              onConnectEnd={() => {
+                connectingHandleTypeRef.current = null;
+                invalidConnectionToastShownRef.current = false;
+              }}
               onDrop={onDrop}
               onDragOver={onDragOver}
               onNodeClick={handleNodeClick}

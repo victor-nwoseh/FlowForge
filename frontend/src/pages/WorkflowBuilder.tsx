@@ -56,8 +56,10 @@ const WorkflowBuilder = () => {
     setEdges,
     addNode,
     addEdge: addEdgeToStore,
+    deleteNode: removeNode,
     setSelectedNode,
     setCurrentWorkflow,
+    selectedNode,
   } = useWorkflowStore((state) => ({
     nodes: state.nodes,
     edges: state.edges,
@@ -65,8 +67,10 @@ const WorkflowBuilder = () => {
     setEdges: state.setEdges,
     addNode: state.addNode,
     addEdge: state.addEdge,
+    deleteNode: state.deleteNode,
     setSelectedNode: state.setSelectedNode,
     setCurrentWorkflow: state.setCurrentWorkflow,
+    selectedNode: state.selectedNode,
   }));
 
   const [name, setName] = useState('');
@@ -446,6 +450,78 @@ const WorkflowBuilder = () => {
       }
     };
   }, [nodes, edges, handleSave, workflowId]);
+
+  const deleteSelectedNode = useCallback(() => {
+    if (!selectedNode) {
+      return;
+    }
+    removeNode(selectedNode.id);
+    setSelectedNode(null);
+    toast.success('Node deleted');
+  }, [removeNode, selectedNode, setSelectedNode]);
+
+  const duplicateSelectedNode = useCallback(() => {
+    if (!selectedNode) {
+      return;
+    }
+    const newId = generateNodeId();
+    const newNode = {
+      ...selectedNode,
+      id: newId,
+      position: {
+        x: selectedNode.position.x + 40,
+        y: selectedNode.position.y + 40,
+      },
+    };
+    addNode(newNode);
+    setSelectedNode(newNode);
+    toast.success('Node duplicated');
+  }, [addNode, selectedNode, setSelectedNode]);
+
+  useEffect(() => {
+    const handleKeyDown = async (event: KeyboardEvent) => {
+      const isMeta = event.metaKey || event.ctrlKey;
+      const key = event.key.toLowerCase();
+
+      if (isMeta && key === 's') {
+        event.preventDefault();
+        if (autoSaveTimeoutRef.current !== null) {
+          window.clearTimeout(autoSaveTimeoutRef.current);
+          autoSaveTimeoutRef.current = null;
+        }
+        try {
+          setIsAutoSaving(true);
+          await handleSave();
+          setLastSavedAt(new Date());
+        } finally {
+          setIsAutoSaving(false);
+        }
+        return;
+      }
+
+      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedNode) {
+        event.preventDefault();
+        deleteSelectedNode();
+        return;
+      }
+
+      if (isMeta && key === 'd') {
+        event.preventDefault();
+        duplicateSelectedNode();
+        return;
+      }
+
+      if (event.key === 'Escape' && selectedNode) {
+        event.preventDefault();
+        setSelectedNode(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [deleteSelectedNode, duplicateSelectedNode, handleSave, selectedNode, setSelectedNode]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">

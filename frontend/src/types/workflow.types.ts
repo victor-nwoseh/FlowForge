@@ -43,5 +43,6 @@ export interface Workflow {
   edges: WorkflowEdge[];
   createdAt?: string;
   updatedAt?: string;
+  isActive?: boolean;
 }
 

@@ -75,6 +75,9 @@ const WorkflowBuilder = () => {
     useState<ReactFlowInstance | null>(null);
   const [fitViewRequest, setFitViewRequest] = useState(0);
   const [isLoadingWorkflow, setIsLoadingWorkflow] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const autoSaveTimeoutRef = useRef<number | null>(null);
 
   const scheduleFitView = useCallback(() => {
     shouldFitViewRef.current = true;
@@ -90,6 +93,10 @@ const WorkflowBuilder = () => {
       if (fitViewAnimationRef.current !== null) {
         cancelAnimationFrame(fitViewAnimationRef.current);
         fitViewAnimationRef.current = null;
+      }
+      if (autoSaveTimeoutRef.current !== null) {
+        window.clearTimeout(autoSaveTimeoutRef.current);
+        autoSaveTimeoutRef.current = null;
       }
     };
   }, []);
@@ -408,6 +415,37 @@ const WorkflowBuilder = () => {
   const handleRunWorkflow = () => {
     toast.success('Workflow run queued (placeholder)');
   };
+
+  useEffect(() => {
+    if (!workflowId) {
+      return;
+    }
+
+    if (autoSaveTimeoutRef.current !== null) {
+      window.clearTimeout(autoSaveTimeoutRef.current);
+      autoSaveTimeoutRef.current = null;
+    }
+
+    setIsAutoSaving(true);
+
+    autoSaveTimeoutRef.current = window.setTimeout(async () => {
+      try {
+        await handleSave();
+        setLastSavedAt(new Date());
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsAutoSaving(false);
+      }
+    }, 2000);
+
+    return () => {
+      if (autoSaveTimeoutRef.current !== null) {
+        window.clearTimeout(autoSaveTimeoutRef.current);
+        autoSaveTimeoutRef.current = null;
+      }
+    };
+  }, [nodes, edges, handleSave, workflowId]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">

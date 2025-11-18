@@ -22,6 +22,7 @@ import CustomNode from '../components/CustomNode';
 import NodeConfigPanel from '../components/NodeConfigPanel';
 import NodePalette from '../components/NodePalette';
 import LoadingSpinner from '../components/LoadingSpinner';
+import WorkflowStats from '../components/WorkflowStats';
 import { useWorkflowStore } from '../store/workflow.store';
 import workflowService from '../services/workflow.service';
 import { generateEdgeId, generateNodeId } from '../utils/workflow.utils';
@@ -60,6 +61,7 @@ const WorkflowBuilder = () => {
     setSelectedNode,
     setCurrentWorkflow,
     selectedNode,
+    currentWorkflow,
   } = useWorkflowStore((state) => ({
     nodes: state.nodes,
     edges: state.edges,
@@ -71,6 +73,7 @@ const WorkflowBuilder = () => {
     setSelectedNode: state.setSelectedNode,
     setCurrentWorkflow: state.setCurrentWorkflow,
     selectedNode: state.selectedNode,
+    currentWorkflow: state.currentWorkflow,
   }));
 
   const [name, setName] = useState('');
@@ -82,6 +85,7 @@ const WorkflowBuilder = () => {
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const autoSaveTimeoutRef = useRef<number | null>(null);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
 
   const scheduleFitView = useCallback(() => {
     shouldFitViewRef.current = true;
@@ -523,6 +527,17 @@ const WorkflowBuilder = () => {
     };
   }, [deleteSelectedNode, duplicateSelectedNode, handleSave, selectedNode, setSelectedNode]);
 
+  const statsWorkflow: Workflow = {
+    _id: currentWorkflow?._id,
+    name,
+    description,
+    nodes,
+    edges,
+    createdAt: currentWorkflow?.createdAt ?? lastSavedAt?.toISOString(),
+    updatedAt: currentWorkflow?.updatedAt ?? lastSavedAt?.toISOString(),
+    isActive: currentWorkflow?.isActive ?? true,
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <NodePalette />
@@ -545,6 +560,13 @@ const WorkflowBuilder = () => {
           <div className="flex items-center gap-3">
             <Button onClick={handleSave} icon={Save} className="w-auto">
               Save Workflow
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setIsStatsOpen(true)}
+              className="w-auto"
+            >
+              Show Stats
             </Button>
             <Button
               variant="secondary"
@@ -602,6 +624,31 @@ const WorkflowBuilder = () => {
         </div>
       </div>
       <NodeConfigPanel />
+      {isStatsOpen ? (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+          onClick={() => setIsStatsOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Workflow Details
+              </h2>
+              <button
+                type="button"
+                onClick={() => setIsStatsOpen(false)}
+                className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                Close
+              </button>
+            </div>
+            <WorkflowStats workflow={statsWorkflow} />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

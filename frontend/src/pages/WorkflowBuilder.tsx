@@ -86,6 +86,7 @@ const WorkflowBuilder = () => {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const autoSaveTimeoutRef = useRef<number | null>(null);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [formErrors, setFormErrors] = useState<{ name?: string; description?: string }>({});
 
   const scheduleFitView = useCallback(() => {
     shouldFitViewRef.current = true;
@@ -135,7 +136,7 @@ const WorkflowBuilder = () => {
         setCurrentWorkflow(workflow);
         setSelectedNode(null);
       } catch (error) {
-        toast.error('Failed to load workflow');
+        toast.error(parseApiError(error));
         console.error(error);
       } finally {
         isLoadingWorkflowRef.current = false;
@@ -373,8 +374,7 @@ const WorkflowBuilder = () => {
   );
 
   const handleSave = useCallback(async () => {
-    if (!name.trim()) {
-      toast.error('Workflow name is required');
+    if (!validateForm(name, description)) {
       return;
     }
 
@@ -407,7 +407,7 @@ const WorkflowBuilder = () => {
         navigate(`/workflows/${created._id}`);
       }
     } catch (error) {
-      toast.error('Failed to save workflow');
+      toast.error(parseApiError(error));
       console.error(error);
     }
   }, [
@@ -482,6 +482,55 @@ const WorkflowBuilder = () => {
     toast.success('Node duplicated');
   }, [addNode, selectedNode, setSelectedNode]);
 
+  const validateForm = useCallback(
+    (workflowName: string, workflowDescription: string) => {
+      const errors: { name?: string; description?: string } = {};
+
+      if (!workflowName.trim()) {
+        errors.name = 'Workflow name is required.';
+      } else if (workflowName.trim().length < 3) {
+        errors.name = 'Workflow name must be at least 3 characters.';
+      } else if (workflowName.trim().length > 50) {
+        errors.name = 'Workflow name must be at most 50 characters.';
+      }
+
+      if (workflowDescription.trim().length > 200) {
+        errors.description = 'Description must be at most 200 characters.';
+      }
+
+      setFormErrors(errors);
+      if (!errors.name && errors.description) {
+        toast.error(errors.description);
+      }
+
+      return Object.keys(errors).length === 0;
+    },
+    [],
+  );
+
+  const parseApiError = (error: unknown) => {
+    if (!error || typeof error !== 'object') {
+      return 'An unexpected error occurred. Please try again.';
+    }
+
+    const err = error as { response?: Response; message?: string };
+
+    if (!err.response) {
+      return 'Network error: unable to reach the server.';
+    }
+
+    switch (err.response.status) {
+      case 400:
+        return 'Validation error: please check your input.';
+      case 401:
+        return 'You are not authorized. Please log in again.';
+      case 404:
+        return 'Workflow not found.';
+      default:
+        return err.message || 'An unexpected server error occurred.';
+    }
+  };
+
   useEffect(() => {
     const handleKeyDown = async (event: KeyboardEvent) => {
       const isMeta = event.metaKey || event.ctrlKey;
@@ -548,17 +597,38 @@ const WorkflowBuilder = () => {
               className="max-w-sm"
               placeholder="Workflow name"
               value={name}
-              onChange={(event) => setName(event.target.value)}
+              onChange={(event) => {
+                setName(event.target.value);
+                if (formErrors.name) {
+                  validateForm(event.target.value, description);
+                }
+              }}
             />
+            {formErrors.name ? (
+              <p className="text-xs text-red-500">{formErrors.name}</p>
+            ) : null}
             <Input
               className="max-w-md"
               placeholder="Description"
               value={description}
-              onChange={(event) => setDescription(event.target.value)}
+              onChange={(event) => {
+                setDescription(event.target.value);
+                if (formErrors.description) {
+                  validateForm(name, event.target.value);
+                }
+              }}
             />
+            {formErrors.description ? (
+              <p className="text-xs text-red-500">{formErrors.description}</p>
+            ) : null}
           </div>
           <div className="flex items-center gap-3">
-            <Button onClick={handleSave} icon={Save} className="w-auto">
+            <Button
+              onClick={handleSave}
+              icon={Save}
+              className="w-auto"
+              disabled={Boolean(formErrors.name || formErrors.description)}
+            >
               Save Workflow
             </Button>
             <Button

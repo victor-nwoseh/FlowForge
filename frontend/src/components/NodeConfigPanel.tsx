@@ -18,7 +18,12 @@ const ACTION_OPTIONS = [
   { label: 'HTTP Request', value: 'http_request' },
 ];
 
-const NodeConfigPanel = () => {
+interface NodeConfigPanelProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
   const selectedNode = useWorkflowStore((state) => state.selectedNode);
   const updateNode = useWorkflowStore((state) => state.updateNode);
   const deleteNode = useWorkflowStore((state) => state.deleteNode);
@@ -34,7 +39,7 @@ const NodeConfigPanel = () => {
     }
   }, [selectedNode]);
 
-  if (!selectedNode) {
+  if (!selectedNode || !isOpen) {
     return null;
   }
 
@@ -59,6 +64,7 @@ const NodeConfigPanel = () => {
 
   const handleClose = () => {
     setSelectedNode(null);
+    onClose();
   };
 
   const handleDelete = () => {
@@ -188,53 +194,61 @@ const NodeConfigPanel = () => {
   };
 
   return (
-    <aside className="fixed right-0 top-0 z-30 flex h-full w-96 flex-col border-l border-gray-200 bg-white shadow-2xl">
-      <div className="flex items-center justify-between border-b border-gray-200 p-4">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Configure Node
-          </h3>
-          <p className="text-sm text-gray-500">
-            {selectedNode.data.type.toUpperCase()} NODE
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleClose}
-          className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          aria-label="Close configuration panel"
-        >
-          <X size={18} />
-        </button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">Label</label>
-            <Input
-              value={label}
-              onChange={(event) => setLabel(event.target.value)}
-              placeholder="Node label"
-            />
+    <div
+      className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+      onClick={handleClose}
+    >
+      <div
+        className="flex w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-gray-200 p-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Configure Node
+            </h3>
+            <p className="text-sm text-gray-500">
+              {selectedNode.data.type.toUpperCase()} NODE
+            </p>
           </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            aria-label="Close configuration panel"
+          >
+            <X size={18} />
+          </button>
+        </div>
 
-          {renderTypeSpecificFields()}
+        <div className="max-h-[65vh] overflow-y-auto p-4">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Label</label>
+              <Input
+                value={label}
+                onChange={(event) => setLabel(event.target.value)}
+                placeholder="Node label"
+              />
+            </div>
+
+            {renderTypeSpecificFields()}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 border-t border-gray-200 p-4">
+          <Button variant="danger" onClick={handleDelete} className="flex-1">
+            Delete Node
+          </Button>
+          <Button onClick={handleSave} disabled={!label} className="flex-1">
+            Save Changes
+          </Button>
+          <Button variant="secondary" onClick={handleClose} className="flex-1">
+            Cancel
+          </Button>
         </div>
       </div>
-
-      <div className="flex items-center gap-3 border-t border-gray-200 p-4">
-        <Button variant="danger" onClick={handleDelete} className="flex-1">
-          Delete Node
-        </Button>
-        <Button onClick={handleSave} disabled={!label} className="flex-1">
-          Save Changes
-        </Button>
-        <Button variant="secondary" onClick={handleClose} className="flex-1">
-          Cancel
-        </Button>
-      </div>
-    </aside>
+    </div>
   );
 };
 

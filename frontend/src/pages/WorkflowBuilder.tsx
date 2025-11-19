@@ -38,6 +38,8 @@ const nodeTypes = {
 };
 
 const DEFAULT_ZOOM = 0.75;
+const AUTO_SAVE_DELAY = 30000;
+const MANUAL_SAVE_SPINNER_MS = 2000;
 
 const WorkflowBuilder = () => {
   const { id: workflowId } = useParams<{ id?: string }>();
@@ -49,6 +51,34 @@ const WorkflowBuilder = () => {
   const fitViewAnimationRef = useRef<number | null>(null);
   const connectingHandleTypeRef = useRef<'source' | 'target' | null>(null);
   const invalidConnectionToastShownRef = useRef(false);
+  const [isManualSaving, setIsManualSaving] = useState(false);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+
+  const validateForm = useCallback(
+    (workflowName: string, workflowDescription: string) => {
+      const errors: { name?: string; description?: string } = {};
+
+      if (!workflowName.trim()) {
+        errors.name = 'Workflow name is required.';
+      } else if (workflowName.trim().length < 3) {
+        errors.name = 'Workflow name must be at least 3 characters.';
+      } else if (workflowName.trim().length > 50) {
+        errors.name = 'Workflow name must be at most 50 characters.';
+      }
+
+      if (workflowDescription.trim().length > 200) {
+        errors.description = 'Description must be at most 200 characters.';
+      }
+
+      setFormErrors(errors);
+      if (!errors.name && errors.description) {
+        toast.error(errors.description);
+      }
+
+      return Object.keys(errors).length === 0;
+    },
+    [],
+  );
 
   const {
     nodes,
@@ -359,6 +389,7 @@ const WorkflowBuilder = () => {
 
         addNode(newNode);
         setSelectedNode(newNode);
+        setIsConfigOpen(false);
       } catch (error) {
         console.error('Failed to parse node data', error);
       }
@@ -369,6 +400,15 @@ const WorkflowBuilder = () => {
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: WorkflowNode) => {
       setSelectedNode(node);
+      setIsConfigOpen(false);
+    },
+    [setSelectedNode],
+  );
+
+  const handleNodeDoubleClick = useCallback(
+    (_: React.MouseEvent, node: WorkflowNode) => {
+      setSelectedNode(node);
+      setIsConfigOpen(true);
     },
     [setSelectedNode],
   );
@@ -399,11 +439,9 @@ const WorkflowBuilder = () => {
       if (workflowId) {
         const updated = await workflowService.update(workflowId, payload);
         setCurrentWorkflow(updated);
-        toast.success('Workflow updated successfully');
       } else {
         const created = await workflowService.create(payload);
         setCurrentWorkflow(created);
-        toast.success('Workflow created successfully');
         navigate(`/workflows/${created._id}`);
       }
     } catch (error) {
@@ -434,18 +472,18 @@ const WorkflowBuilder = () => {
       autoSaveTimeoutRef.current = null;
     }
 
-    setIsAutoSaving(true);
-
     autoSaveTimeoutRef.current = window.setTimeout(async () => {
       try {
+        setIsAutoSaving(true);
         await handleSave();
         setLastSavedAt(new Date());
+        toast.success('Workflow auto-saved');
       } catch (error) {
         console.error(error);
       } finally {
         setIsAutoSaving(false);
       }
-    }, 2000);
+    }, AUTO_SAVE_DELAY);
 
     return () => {
       if (autoSaveTimeoutRef.current !== null) {
@@ -453,7 +491,35 @@ const WorkflowBuilder = () => {
         autoSaveTimeoutRef.current = null;
       }
     };
-  }, [nodes, edges, handleSave, workflowId]);
+  }, [nodes, edges, name, description, handleSave, workflowId]);
+
+  const triggerManualSave = useCallback(async () => {
+    if (isManualSaving) {
+      return;
+    }
+    if (!validateForm(name, description)) {
+      return;
+    }
+
+    if (autoSaveTimeoutRef.current !== null) {
+      window.clearTimeout(autoSaveTimeoutRef.current);
+      autoSaveTimeoutRef.current = null;
+    }
+
+    setIsManualSaving(true);
+    const start = Date.now();
+    try {
+      await handleSave();
+      setLastSavedAt(new Date());
+    } finally {
+      const elapsed = Date.now() - start;
+      const remaining = Math.max(MANUAL_SAVE_SPINNER_MS - elapsed, 0);
+      window.setTimeout(() => {
+        setIsManualSaving(false);
+        toast.success('Workflow updated successfully');
+      }, remaining);
+    }
+  }, [handleSave, isManualSaving, name, description, validateForm]);
 
   const deleteSelectedNode = useCallback(() => {
     if (!selectedNode) {
@@ -461,6 +527,7 @@ const WorkflowBuilder = () => {
     }
     removeNode(selectedNode.id);
     setSelectedNode(null);
+    setIsConfigOpen(false);
     toast.success('Node deleted');
   }, [removeNode, selectedNode, setSelectedNode]);
 
@@ -479,34 +546,9 @@ const WorkflowBuilder = () => {
     };
     addNode(newNode);
     setSelectedNode(newNode);
+    setIsConfigOpen(false);
     toast.success('Node duplicated');
   }, [addNode, selectedNode, setSelectedNode]);
-
-  const validateForm = useCallback(
-    (workflowName: string, workflowDescription: string) => {
-      const errors: { name?: string; description?: string } = {};
-
-      if (!workflowName.trim()) {
-        errors.name = 'Workflow name is required.';
-      } else if (workflowName.trim().length < 3) {
-        errors.name = 'Workflow name must be at least 3 characters.';
-      } else if (workflowName.trim().length > 50) {
-        errors.name = 'Workflow name must be at most 50 characters.';
-      }
-
-      if (workflowDescription.trim().length > 200) {
-        errors.description = 'Description must be at most 200 characters.';
-      }
-
-      setFormErrors(errors);
-      if (!errors.name && errors.description) {
-        toast.error(errors.description);
-      }
-
-      return Object.keys(errors).length === 0;
-    },
-    [],
-  );
 
   const parseApiError = (error: unknown) => {
     if (!error || typeof error !== 'object') {
@@ -538,17 +580,7 @@ const WorkflowBuilder = () => {
 
       if (isMeta && key === 's') {
         event.preventDefault();
-        if (autoSaveTimeoutRef.current !== null) {
-          window.clearTimeout(autoSaveTimeoutRef.current);
-          autoSaveTimeoutRef.current = null;
-        }
-        try {
-          setIsAutoSaving(true);
-          await handleSave();
-          setLastSavedAt(new Date());
-        } finally {
-          setIsAutoSaving(false);
-        }
+        await triggerManualSave();
         return;
       }
 
@@ -567,6 +599,7 @@ const WorkflowBuilder = () => {
       if (event.key === 'Escape' && selectedNode) {
         event.preventDefault();
         setSelectedNode(null);
+        setIsConfigOpen(false);
       }
     };
 
@@ -574,7 +607,7 @@ const WorkflowBuilder = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [deleteSelectedNode, duplicateSelectedNode, handleSave, selectedNode, setSelectedNode]);
+  }, [deleteSelectedNode, duplicateSelectedNode, triggerManualSave, selectedNode, setSelectedNode, setIsConfigOpen]);
 
   const statsWorkflow: Workflow = {
     _id: currentWorkflow?._id,
@@ -624,7 +657,7 @@ const WorkflowBuilder = () => {
           </div>
           <div className="flex items-center gap-3">
             <Button
-              onClick={handleSave}
+              onClick={triggerManualSave}
               icon={Save}
               className="w-auto"
               disabled={Boolean(formErrors.name || formErrors.description)}
@@ -649,13 +682,20 @@ const WorkflowBuilder = () => {
           </div>
         </header>
         <div className="relative flex flex-1">
-          {isLoadingWorkflow ? (
+          {isLoadingWorkflow || isManualSaving ? (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-sm">
-              <LoadingSpinner />
+              <div className="flex flex-col items-center gap-2">
+                <LoadingSpinner />
+                <span className="text-sm font-medium text-indigo-600">
+                  {isLoadingWorkflow ? 'Loading workflow...' : 'Saving workflow...'}
+                </span>
+              </div>
             </div>
           ) : null}
           <div
-            className="h-full flex-1 bg-slate-100"
+            className={`h-full flex-1 bg-slate-100 ${
+              isManualSaving ? 'pointer-events-none opacity-90' : ''
+            }`}
             ref={reactFlowWrapper}
           >
             <ReactFlow
@@ -666,6 +706,8 @@ const WorkflowBuilder = () => {
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
               isValidConnection={isValidConnection}
+              onNodeClick={handleNodeClick}
+              onNodeDoubleClick={handleNodeDoubleClick}
               onConnectStart={(_, params) => {
                 connectingHandleTypeRef.current = params.handleType ?? null;
                 invalidConnectionToastShownRef.current = false;
@@ -676,7 +718,6 @@ const WorkflowBuilder = () => {
               }}
               onDrop={onDrop}
               onDragOver={onDragOver}
-              onNodeClick={handleNodeClick}
               onInit={setReactFlowInstance}
               defaultEdgeOptions={{
                 type: 'smoothstep',
@@ -693,7 +734,10 @@ const WorkflowBuilder = () => {
           </div>
         </div>
       </div>
-      <NodeConfigPanel />
+      <NodeConfigPanel
+        isOpen={isConfigOpen && Boolean(selectedNode)}
+        onClose={() => setIsConfigOpen(false)}
+      />
       {isStatsOpen ? (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"

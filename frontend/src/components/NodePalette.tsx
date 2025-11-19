@@ -122,6 +122,9 @@ const NodePalette = () => {
         <p className="mt-1 text-sm text-gray-500">
           Drag nodes onto the canvas to build your workflow.
         </p>
+        <p className="mt-1 text-xs text-gray-400">
+          Double-tap a node to open its configuration panel.
+        </p>
         <div className="mt-4 flex flex-wrap gap-2">
           {FILTERS.map(({ label, value }) => (
             <button

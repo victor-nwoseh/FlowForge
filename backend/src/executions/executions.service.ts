@@ -19,7 +19,7 @@ export class ExecutionsService {
     workflowId: string,
     userId: string,
     triggerData: any = {},
-  ): Promise<Execution> {
+  ): Promise<ExecutionDocument> {
     const execution = new this.executionModel({
       workflowId,
       userId,
@@ -30,7 +30,10 @@ export class ExecutionsService {
     return execution.save();
   }
 
-  async findAll(userId: string, workflowId?: string): Promise<Execution[]> {
+  async findAll(
+    userId: string,
+    workflowId?: string,
+  ): Promise<ExecutionDocument[]> {
     const query: Record<string, any> = { userId };
 
     if (workflowId) {
@@ -43,7 +46,7 @@ export class ExecutionsService {
       .exec();
   }
 
-  async findOne(id: string, userId: string): Promise<Execution> {
+  async findOne(id: string, userId: string): Promise<ExecutionDocument> {
     const execution = await this.executionModel.findOne({ _id: id, userId }).exec();
 
     if (!execution) {
@@ -53,7 +56,10 @@ export class ExecutionsService {
     return execution;
   }
 
-  async updateStatus(id: string, status: ExecutionStatus): Promise<Execution> {
+  async updateStatus(
+    id: string,
+    status: ExecutionStatus,
+  ): Promise<ExecutionDocument> {
     const execution = await this.executionModel.findById(id).exec();
 
     if (!execution) {
@@ -81,7 +87,10 @@ export class ExecutionsService {
     return execution;
   }
 
-  async addLog(id: string, log: NodeExecutionLog): Promise<Execution> {
+  async addLog(
+    id: string,
+    log: NodeExecutionLog,
+  ): Promise<ExecutionDocument> {
     const execution = await this.executionModel
       .findByIdAndUpdate(
         id,
@@ -99,7 +108,7 @@ export class ExecutionsService {
     return execution;
   }
 
-  async setError(id: string, error: string): Promise<Execution> {
+  async setError(id: string, error: string): Promise<ExecutionDocument> {
     const execution = await this.executionModel.findById(id).exec();
 
     if (!execution) {

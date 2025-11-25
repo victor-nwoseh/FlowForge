@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 
 @Schema()
 export class Execution {
@@ -38,7 +38,7 @@ export class Execution {
   createdAt!: Date;
 }
 
-export type ExecutionDocument = Execution & Document;
+export type ExecutionDocument = HydratedDocument<Execution>;
 
 export const ExecutionSchema = SchemaFactory.createForClass(Execution);
 

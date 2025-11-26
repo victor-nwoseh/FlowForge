@@ -49,6 +49,10 @@ export class WorkflowExecutorService {
     userId: string,
     triggerData: any,
   ): Promise<void> {
+    let currentNodeId: string | null = null;
+    let currentNodeType: string | null = null;
+    let context: ExecutionContext | null = null;
+
     try {
       await this.executionsService.updateStatus(executionId, 'running');
       this.logger.log(
@@ -71,36 +75,43 @@ export class WorkflowExecutorService {
         `Workflow ${workflowId} has ${workflow.nodes.length} nodes for execution ${executionId}`,
       );
 
-      const sortedNodeIds = topologicalSort(workflow.nodes, workflow.edges ?? []);
+      const sortedNodeIds = topologicalSort(
+        workflow.nodes,
+        workflow.edges ?? [],
+      );
+
+      if (sortedNodeIds.length === 0) {
+        throw new Error('No executable nodes found in workflow');
+      }
+
       this.logger.log(
         `Node execution order determined for execution ${executionId}: ${sortedNodeIds.join(', ')}`,
       );
 
-      const context: ExecutionContext = {
+      context = {
         variables: {},
         trigger: triggerData,
       };
 
       for (const nodeId of sortedNodeIds) {
+        currentNodeId = nodeId;
         const node = workflow.nodes.find((n) => n.id === nodeId);
 
         if (!node) {
-          this.logger.warn(`Node not found in workflow definition: ${nodeId}`);
-          continue;
+          throw new Error(`Node ${nodeId} not found in workflow definition`);
         }
 
         const nodeType = node?.data?.type;
+        currentNodeType = nodeType ?? null;
 
         if (!nodeType) {
-          this.logger.warn(`Node type missing for node: ${nodeId}`);
-          continue;
+          throw new Error(`Node type missing for node ${nodeId}`);
         }
 
         const handler = this.nodeHandlerRegistry.getHandler(nodeType);
 
         if (!handler) {
-          this.logger.warn(`No handler found for node type: ${nodeType}`);
-          continue;
+          throw new Error(`Unsupported node type: ${nodeType}. Handler not registered`);
         }
 
         const processedConfig = replaceVariablesInObject(
@@ -143,7 +154,11 @@ export class WorkflowExecutorService {
         }
 
         if (!result.success) {
-          throw new Error(result.error || 'Node execution failed');
+          throw new Error(
+            result.error
+              ? `Node ${nodeId} failed: ${result.error}`
+              : `Node ${nodeId} failed due to unknown error`,
+          );
         }
 
         context[nodeId] = result.output;
@@ -157,12 +172,32 @@ export class WorkflowExecutorService {
         `Workflow execution ${executionId} for workflow ${workflowId} completed successfully`,
       );
     } catch (error: any) {
+      const contextDetails =
+        context && currentNodeId ? context[currentNodeId] : context;
+      const failureMessage = currentNodeId
+        ? `Workflow execution ${executionId} failed at node ${currentNodeId} (${currentNodeType ?? 'unknown'}): ${error.message}`
+        : `Workflow execution ${executionId} failed before node execution: ${error.message}`;
+
+      const failureContext = {
+        executionId,
+        workflowId,
+        nodeId: currentNodeId,
+        nodeType: currentNodeType,
+        context: contextDetails,
+      };
+
       this.logger.error(
-        `Workflow execution failed (${executionId}): ${error.message}`,
+        failureMessage,
         error.stack,
       );
+      this.logger.debug(
+        `Execution failure context for ${executionId}: ${JSON.stringify(failureContext)}`,
+      );
       await this.executionsService.updateStatus(executionId, 'failed');
-      await this.executionsService.setError(executionId, error.message);
+      await this.executionsService.setError(
+        executionId,
+        `${failureMessage} | Context: ${JSON.stringify(contextDetails ?? {})}`,
+      );
     }
   }
 }

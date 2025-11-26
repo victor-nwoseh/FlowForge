@@ -10,6 +10,7 @@ import {
   Put,
   Request,
   UseGuards,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
@@ -84,23 +85,46 @@ export class WorkflowsController {
         jobId: job.id,
       };
     } catch (error: any) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      if (error.status === HttpStatus.NOT_FOUND || error?.response?.status === HttpStatus.NOT_FOUND) {
+      if (error instanceof NotFoundException) {
         throw new HttpException(
-          error.message || 'Workflow not found',
+          'Workflow not found or access denied',
           HttpStatus.NOT_FOUND,
         );
       }
 
-      if (error.status === HttpStatus.BAD_REQUEST) {
-        throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+      if (error instanceof HttpException) {
+        const status = error.getStatus();
+        if (status === HttpStatus.BAD_REQUEST) {
+          throw new HttpException(
+            `Invalid workflow: ${error.message}`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        throw error;
+      }
+
+      if (
+        error.status === HttpStatus.NOT_FOUND ||
+        error?.response?.status === HttpStatus.NOT_FOUND
+      ) {
+        throw new HttpException(
+          'Workflow not found or access denied',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      if (
+        error.status === HttpStatus.BAD_REQUEST ||
+        error?.response?.status === HttpStatus.BAD_REQUEST
+      ) {
+        throw new HttpException(
+          `Invalid workflow: ${error.message ?? 'Validation failed'}`,
+          HttpStatus.BAD_REQUEST,
+        );
       }
 
       throw new HttpException(
-        error.message || 'Failed to start workflow execution',
+        `Failed to start workflow execution: ${error.message || 'Unknown error'}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

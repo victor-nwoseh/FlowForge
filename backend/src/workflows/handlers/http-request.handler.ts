@@ -6,12 +6,16 @@ import {
   INodeHandler,
   NodeHandlerResponse,
 } from '../interfaces/node-handler.interface';
+import {
+  replaceVariables,
+  replaceVariablesInObject,
+} from '../utils/variable-replacement.util';
 
 @Injectable()
 export class HttpRequestHandler implements INodeHandler {
   async execute(
     nodeData: any,
-    _context: ExecutionContext,
+    context: ExecutionContext,
   ): Promise<NodeHandlerResponse> {
     if (!nodeData?.config) {
       return {
@@ -37,11 +41,15 @@ export class HttpRequestHandler implements INodeHandler {
     }
 
     try {
+      const processedUrl = replaceVariables(url, context);
+      const processedHeaders = replaceVariablesInObject(headers, context);
+      const processedBody = replaceVariablesInObject(body, context);
+
       const response = await axios({
         method,
-        url,
-        headers,
-        data: body,
+        url: processedUrl,
+        headers: processedHeaders,
+        data: processedBody,
       });
 
       return {

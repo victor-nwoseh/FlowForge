@@ -51,7 +51,7 @@ function resolvePath(path: string, context: ExecutionContext): any {
 
   let current: any;
 
-  if (root === 'variables') {
+  if (root === 'variables' || root === 'variable') {
     current = context.variables;
   } else if (root === 'trigger') {
     current = context.trigger;

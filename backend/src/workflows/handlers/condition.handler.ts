@@ -5,6 +5,7 @@ import {
   INodeHandler,
   NodeHandlerResponse,
 } from '../interfaces/node-handler.interface';
+import { replaceVariables } from '../utils/variable-replacement.util';
 
 const OPERATORS = ['>=', '<=', '==', '!=', '>', '<'] as const;
 type Operator = (typeof OPERATORS)[number];
@@ -13,7 +14,7 @@ type Operator = (typeof OPERATORS)[number];
 export class ConditionHandler implements INodeHandler {
   async execute(
     nodeData: any,
-    _context: ExecutionContext,
+    context: ExecutionContext,
   ): Promise<NodeHandlerResponse> {
     const expression = nodeData?.config?.expression;
 
@@ -26,7 +27,8 @@ export class ConditionHandler implements INodeHandler {
     }
 
     try {
-      const { left, operator, right } = this.parseExpression(expression);
+      const processedExpression = replaceVariables(expression, context);
+      const { left, operator, right } = this.parseExpression(processedExpression);
       const result = this.evaluate(left, operator, right);
 
       return {

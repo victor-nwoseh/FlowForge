@@ -14,13 +14,25 @@ export class VariableHandler implements INodeHandler {
     context: ExecutionContext,
   ): Promise<NodeHandlerResponse> {
     const key = nodeData?.config?.key;
+    const hasValue = Object.prototype.hasOwnProperty.call(
+      nodeData?.config ?? {},
+      'value',
+    );
     const value = nodeData?.config?.value;
 
-    if (!key || typeof key !== 'string') {
+    if (!key || typeof key !== 'string' || !key.trim()) {
       return {
         success: false,
         output: null,
-        error: 'Variable key is required',
+        error: 'Key is required for variable node',
+      };
+    }
+
+    if (!hasValue) {
+      return {
+        success: false,
+        output: null,
+        error: 'Value is required for variable node',
       };
     }
 

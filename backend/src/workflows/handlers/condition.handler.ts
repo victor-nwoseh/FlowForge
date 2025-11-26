@@ -18,11 +18,11 @@ export class ConditionHandler implements INodeHandler {
   ): Promise<NodeHandlerResponse> {
     const expression = nodeData?.config?.expression;
 
-    if (!expression || typeof expression !== 'string') {
+    if (!expression || typeof expression !== 'string' || !expression.trim()) {
       return {
         success: false,
         output: { condition: false },
-        error: 'Condition expression is required',
+        error: 'Expression is required for condition node',
       };
     }
 

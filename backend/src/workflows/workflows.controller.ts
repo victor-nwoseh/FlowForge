@@ -19,6 +19,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateWorkflowDto } from './dto/create-workflow.dto';
 import { UpdateWorkflowDto } from './dto/update-workflow.dto';
 import { WorkflowsService } from './workflows.service';
+import { validateWorkflowStructure } from './utils/workflow-validation.util';
 
 @UseGuards(JwtAuthGuard)
 @Controller('workflows')
@@ -70,6 +71,14 @@ export class WorkflowsController {
       if (!workflow.nodes || workflow.nodes.length === 0) {
         throw new HttpException(
           'Workflow has no nodes to execute',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const validation = validateWorkflowStructure(workflow);
+      if (!validation.valid) {
+        throw new HttpException(
+          `Invalid workflow: ${validation.errors.join(', ')}`,
           HttpStatus.BAD_REQUEST,
         );
       }

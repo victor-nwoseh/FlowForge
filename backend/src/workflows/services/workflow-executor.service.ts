@@ -51,18 +51,30 @@ export class WorkflowExecutorService {
   ): Promise<void> {
     try {
       await this.executionsService.updateStatus(executionId, 'running');
-      this.logger.log(`Starting workflow execution: ${executionId}`);
+      this.logger.log(
+        `Starting workflow execution ${executionId} for workflow ${workflowId}`,
+      );
+      this.logger.log(
+        `Loading workflow ${workflowId} for execution ${executionId}`,
+      );
 
       const workflow = await this.workflowsService.findOne(workflowId, userId);
+      this.logger.log(
+        `Workflow ${workflowId} loaded successfully for execution ${executionId}`,
+      );
 
       if (!workflow?.nodes?.length) {
         throw new Error('Workflow has no nodes to execute');
       }
 
-      this.logger.log(`Loaded workflow with ${workflow.nodes.length} nodes`);
+      this.logger.log(
+        `Workflow ${workflowId} has ${workflow.nodes.length} nodes for execution ${executionId}`,
+      );
 
       const sortedNodeIds = topologicalSort(workflow.nodes, workflow.edges ?? []);
-      this.logger.log(`Sorted nodes: ${sortedNodeIds.join(', ')}`);
+      this.logger.log(
+        `Node execution order determined for execution ${executionId}: ${sortedNodeIds.join(', ')}`,
+      );
 
       const context: ExecutionContext = {
         variables: {},
@@ -101,7 +113,9 @@ export class WorkflowExecutorService {
           config: processedConfig,
         };
 
-        this.logger.log(`Executing node: ${nodeId} (type: ${nodeType})`);
+        this.logger.log(
+          `Executing node ${nodeId} (type: ${nodeType}) for execution ${executionId}`,
+        );
 
         const startTime = new Date();
         const result = await handler.execute(processedNodeData, context);
@@ -133,14 +147,19 @@ export class WorkflowExecutorService {
         }
 
         context[nodeId] = result.output;
-        this.logger.log(`Node execution completed: ${nodeId}`);
+        this.logger.log(
+          `Node ${nodeId} (type: ${nodeType}) completed for execution ${executionId} in ${duration}ms`,
+        );
       }
 
       await this.executionsService.updateStatus(executionId, 'success');
-      this.logger.log(`Workflow execution completed successfully: ${executionId}`);
+      this.logger.log(
+        `Workflow execution ${executionId} for workflow ${workflowId} completed successfully`,
+      );
     } catch (error: any) {
       this.logger.error(
         `Workflow execution failed (${executionId}): ${error.message}`,
+        error.stack,
       );
       await this.executionsService.updateStatus(executionId, 'failed');
       await this.executionsService.setError(executionId, error.message);

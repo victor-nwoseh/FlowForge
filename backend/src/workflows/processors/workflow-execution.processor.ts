@@ -19,7 +19,7 @@ export class WorkflowExecutionProcessor {
     const { workflowId, userId, triggerData = {} } = job.data;
 
     this.logger.log(
-      `Processing workflow execution job ${job.id} for workflow ${workflowId}`,
+      `[Job ${job.id}] Processing workflow execution for workflow ${workflowId}`,
     );
 
     try {
@@ -28,10 +28,11 @@ export class WorkflowExecutionProcessor {
         userId,
         triggerData,
       );
-      this.logger.log(`Workflow execution job completed: ${job.id}`);
+      this.logger.log(`[Job ${job.id}] Workflow execution completed`);
     } catch (error: any) {
       this.logger.error(
-        `Workflow execution job failed (${job.id}): ${error.message}`,
+        `[Job ${job.id}] Workflow execution failed: ${error.message}`,
+        error.stack,
       );
       throw error;
     }

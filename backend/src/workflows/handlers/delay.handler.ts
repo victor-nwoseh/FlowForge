@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { ExecutionContext } from '../../executions/interfaces/execution.interface';
 import {
@@ -8,6 +8,8 @@ import {
 
 @Injectable()
 export class DelayHandler implements INodeHandler {
+  private readonly logger = new Logger(DelayHandler.name);
+
   async execute(
     nodeData: any,
     _context: ExecutionContext,
@@ -15,6 +17,9 @@ export class DelayHandler implements INodeHandler {
     let durationSeconds = Number(nodeData?.config?.duration);
 
     if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+      this.logger.warn(
+        `Invalid delay duration provided (${durationSeconds}). Defaulting to 1 second.`,
+      );
       durationSeconds = 1;
     }
 

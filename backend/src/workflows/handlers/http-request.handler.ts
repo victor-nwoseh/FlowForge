@@ -21,23 +21,29 @@ export class HttpRequestHandler implements INodeHandler {
       return {
         success: false,
         output: null,
-        error: 'HTTP node missing config',
+        error: 'Missing node configuration',
       };
     }
 
-    const {
+    const allowedMethods = ['GET', 'POST', 'PUT', 'DELETE'];
+    let {
       method = 'GET',
       url,
       headers = {},
       body = {},
     } = nodeData.config;
 
-    if (!url || typeof url !== 'string') {
+    if (!url || typeof url !== 'string' || !url.trim()) {
       return {
         success: false,
         output: null,
-        error: 'HTTP node missing URL',
+        error: 'URL is required for HTTP request',
       };
+    }
+
+    method = String(method || 'GET').toUpperCase();
+    if (!allowedMethods.includes(method)) {
+      method = 'GET';
     }
 
     try {

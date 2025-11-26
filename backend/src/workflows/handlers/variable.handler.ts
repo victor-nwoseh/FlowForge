@@ -5,6 +5,7 @@ import {
   INodeHandler,
   NodeHandlerResponse,
 } from '../interfaces/node-handler.interface';
+import { replaceVariables } from '../utils/variable-replacement.util';
 
 @Injectable()
 export class VariableHandler implements INodeHandler {
@@ -23,11 +24,14 @@ export class VariableHandler implements INodeHandler {
       };
     }
 
-    context.variables[key] = value;
+    const processedValue =
+      typeof value === 'string' ? replaceVariables(value, context) : value;
+
+    context.variables[key] = processedValue;
 
     return {
       success: true,
-      output: { key, value },
+      output: { key, value: processedValue },
     };
   }
 }

@@ -93,6 +93,10 @@ export class WorkflowExecutorService {
         trigger: triggerData,
       };
 
+      context._workflowId = workflowId;
+      context._userId = userId;
+      context._executionId = executionId;
+
       for (const nodeId of sortedNodeIds) {
         currentNodeId = nodeId;
         const node = workflow.nodes.find((n) => n.id === nodeId);

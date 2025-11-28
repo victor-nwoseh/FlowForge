@@ -4,6 +4,7 @@ export interface NodeHandlerResponse {
   success: boolean;
   output: any;
   error?: string;
+  continueOnError?: boolean;
 }
 
 export interface INodeHandler {

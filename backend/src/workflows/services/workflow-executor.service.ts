@@ -10,6 +10,17 @@ import {
 import { topologicalSort } from '../utils/topological-sort.util';
 import { replaceVariablesInObject } from '../utils/variable-replacement.util';
 
+const SENSITIVE_KEYS = [
+  'password',
+  'secret',
+  'token',
+  'key',
+  'pass',
+  'authorization',
+  'auth',
+  'credential',
+];
+
 @Injectable()
 export class WorkflowExecutorService {
   private readonly logger = new Logger(WorkflowExecutorService.name);
@@ -52,6 +63,7 @@ export class WorkflowExecutorService {
     let currentNodeId: string | null = null;
     let currentNodeType: string | null = null;
     let context: ExecutionContext | null = null;
+    const successfulNodes: string[] = [];
 
     try {
       await this.executionsService.updateStatus(executionId, 'running');
@@ -128,6 +140,8 @@ export class WorkflowExecutorService {
           config: processedConfig,
         };
 
+        const continueOnError = !!processedConfig.continueOnError;
+
         this.logger.log(
           `Executing node ${nodeId} (type: ${nodeType}) for execution ${executionId}`,
         );
@@ -137,13 +151,80 @@ export class WorkflowExecutorService {
         const endTime = new Date();
         const duration = endTime.getTime() - startTime.getTime();
 
+        if (!result.success) {
+          const failureError = new Error(
+            result.error
+              ? `Node ${nodeId} failed: ${result.error}`
+              : `Node ${nodeId} failed due to unknown error`,
+          );
+
+          const nodeFailureDetails = {
+            nodeId,
+            nodeType,
+            label: node.data?.label ?? nodeId,
+            config: sanitizeDataStructure(processedConfig),
+            input: sanitizeDataStructure(processedNodeData),
+            errorMessage: failureError.message,
+            stack: failureError.stack,
+            executionContext: sanitizeDataStructure(context),
+          };
+
+          this.logger.error(
+            `Execution ${executionId} node ${nodeId} failed`,
+            failureError.stack,
+          );
+          this.logger.debug(
+            `Node failure details for execution ${executionId}: ${JSON.stringify(
+              nodeFailureDetails,
+            )}`,
+          );
+
+          if (continueOnError || result.continueOnError) {
+            this.logger.warn(
+              `Node ${nodeId} failed but continueOnError is enabled. Continuing workflow execution.`,
+            );
+            context[nodeId] = {
+              error: true,
+              message: failureError.message,
+            };
+
+            this.logger.log(
+              `Node ${nodeId} marked as failed but workflow will continue.`,
+            );
+
+            try {
+              await this.executionsService.addLog(executionId, {
+                nodeId,
+                nodeType,
+                status: 'failed',
+                input: processedNodeData,
+                output: context[nodeId],
+                error: failureError.message,
+                startTime,
+                endTime,
+                duration,
+              });
+            } catch (logError) {
+              this.logger.error(
+                `Failed to add execution log for node ${nodeId}: ${(logError as Error).message}`,
+              );
+            }
+
+            continue;
+          }
+
+          throw failureError;
+        }
+
+        context[nodeId] = result.output;
+        successfulNodes.push(nodeId);
+
         const log: NodeExecutionLog = {
           nodeId,
           nodeType,
-          status: result.success ? 'success' : 'failed',
+          status: 'success',
           input: processedNodeData,
           output: result.output,
-          error: result.error,
           startTime,
           endTime,
           duration,
@@ -157,15 +238,6 @@ export class WorkflowExecutorService {
           );
         }
 
-        if (!result.success) {
-          throw new Error(
-            result.error
-              ? `Node ${nodeId} failed: ${result.error}`
-              : `Node ${nodeId} failed due to unknown error`,
-          );
-        }
-
-        context[nodeId] = result.output;
         this.logger.log(
           `Node ${nodeId} (type: ${nodeType}) completed for execution ${executionId} in ${duration}ms`,
         );
@@ -176,34 +248,72 @@ export class WorkflowExecutorService {
         `Workflow execution ${executionId} for workflow ${workflowId} completed successfully`,
       );
     } catch (error: any) {
-      const contextDetails =
-        context && currentNodeId ? context[currentNodeId] : context;
+      const sanitizedContext = sanitizeDataStructure(context);
       const failureMessage = currentNodeId
         ? `Workflow execution ${executionId} failed at node ${currentNodeId} (${currentNodeType ?? 'unknown'}): ${error.message}`
         : `Workflow execution ${executionId} failed before node execution: ${error.message}`;
 
-      const failureContext = {
+      const failureDetails = {
         executionId,
         workflowId,
-        nodeId: currentNodeId,
-        nodeType: currentNodeType,
-        context: contextDetails,
+        failedNodeId: currentNodeId,
+        failedNodeType: currentNodeType,
+        completedNodes: successfulNodes,
+        context: sanitizedContext,
+        triggerData: sanitizeDataStructure(triggerData),
+        errorMessage: error.message,
+        stack: error.stack,
       };
 
       this.logger.error(
-        failureMessage,
+        `Workflow failed at node: ${currentNodeId ?? 'unknown'} | Execution ${executionId}`,
         error.stack,
       );
+      if (successfulNodes.length > 0) {
+        this.logger.warn(
+          `Nodes completed before failure for execution ${executionId}: ${successfulNodes.join(
+            ', ',
+          )}`,
+        );
+      } else {
+        this.logger.warn(
+          `No nodes completed before failure for execution ${executionId}`,
+        );
+      }
       this.logger.debug(
-        `Execution failure context for ${executionId}: ${JSON.stringify(failureContext)}`,
+        `Execution failure details for ${executionId}: ${JSON.stringify(failureDetails)}`,
       );
       await this.executionsService.updateStatus(executionId, 'failed');
       await this.executionsService.setError(
         executionId,
-        `${failureMessage} | Context: ${JSON.stringify(contextDetails ?? {})}`,
+        JSON.stringify(failureDetails),
       );
     }
   }
+}
+
+function sanitizeDataStructure(value: any): any {
+  if (value === null || value === undefined) {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeDataStructure(item));
+  }
+
+  if (typeof value === 'object') {
+    return Object.entries(value).reduce<Record<string, any>>((acc, [key, val]) => {
+      const lowerKey = key.toLowerCase();
+      if (SENSITIVE_KEYS.some((sensitive) => lowerKey.includes(sensitive))) {
+        acc[key] = '***redacted***';
+        return acc;
+      }
+      acc[key] = sanitizeDataStructure(val);
+      return acc;
+    }, {});
+  }
+
+  return value;
 }
 
 

@@ -4,6 +4,7 @@ import { BullModule } from '@nestjs/bull';
 
 import { Workflow, WorkflowSchema } from './schemas/workflow.schema';
 import { WorkflowsController } from './workflows.controller';
+import { WebhookController } from './controllers/webhook.controller';
 import { WorkflowsService } from './workflows.service';
 import { ExecutionsModule } from '../executions/executions.module';
 import { HttpRequestHandler } from './handlers/http-request.handler';
@@ -28,7 +29,7 @@ import { WorkflowExecutionProcessor } from './processors/workflow-execution.proc
     }),
     ExecutionsModule,
   ],
-  controllers: [WorkflowsController],
+  controllers: [WorkflowsController, WebhookController],
   providers: [
     WorkflowsService,
     HttpRequestHandler,

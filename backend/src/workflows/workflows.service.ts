@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 import { CreateWorkflowDto } from './dto/create-workflow.dto';
 import { UpdateWorkflowDto } from './dto/update-workflow.dto';
@@ -29,10 +29,18 @@ export class WorkflowsService {
       .exec();
   }
 
-  async findOne(id: string, userId: string) {
-    const workflow = await this.workflowModel
-      .findOne({ _id: id, userId })
-      .exec();
+  async findOne(id: string, userId?: string) {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException('Workflow not found');
+    }
+
+    const query: Record<string, any> = { _id: id };
+
+    if (userId) {
+      query.userId = userId;
+    }
+
+    const workflow = await this.workflowModel.findOne(query).exec();
 
     if (!workflow) {
       throw new NotFoundException('Workflow not found');

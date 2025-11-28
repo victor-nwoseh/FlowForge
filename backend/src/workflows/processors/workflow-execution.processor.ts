@@ -33,6 +33,8 @@ export class WorkflowExecutionProcessor {
         workflowId,
         userId,
         triggerData,
+        job.attemptsMade + 1,
+        job.id?.toString(),
       );
       this.logger.log(`[Job ${job.id}] Workflow execution completed`);
     } catch (error: any) {

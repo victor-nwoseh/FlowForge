@@ -5,6 +5,7 @@ export interface NodeExecutionLog {
   input: any;
   output: any;
   error?: string;
+  attemptNumber?: number;
   startTime: Date;
   endTime: Date;
   duration: number;

@@ -35,6 +35,8 @@ export class WorkflowExecutorService {
     workflowId: string,
     userId: string,
     triggerData: any = {},
+    attemptNumber = 1,
+    jobId?: string,
   ): Promise<string> {
     const execution = await this.executionsService.create(
       workflowId,
@@ -49,6 +51,8 @@ export class WorkflowExecutorService {
       workflowId,
       userId,
       triggerData,
+      attemptNumber,
+      jobId,
     );
 
     return execution._id.toString();
@@ -59,6 +63,8 @@ export class WorkflowExecutorService {
     workflowId: string,
     userId: string,
     triggerData: any,
+    attemptNumber: number,
+    jobId?: string,
   ): Promise<void> {
     let currentNodeId: string | null = null;
     let currentNodeType: string | null = null;
@@ -68,7 +74,7 @@ export class WorkflowExecutorService {
     try {
       await this.executionsService.updateStatus(executionId, 'running');
       this.logger.log(
-        `Starting workflow execution ${executionId} for workflow ${workflowId}`,
+        `Starting workflow execution ${executionId} for workflow ${workflowId} (attempt ${attemptNumber}${jobId ? `, job ${jobId}` : ''})`,
       );
       this.logger.log(
         `Loading workflow ${workflowId} for execution ${executionId}`,
@@ -143,7 +149,7 @@ export class WorkflowExecutorService {
         const continueOnError = !!processedConfig.continueOnError;
 
         this.logger.log(
-          `Executing node ${nodeId} (type: ${nodeType}) for execution ${executionId}`,
+          `Node execution attempt ${attemptNumber}: ${nodeId} (type: ${nodeType}) for execution ${executionId}`,
         );
 
         const startTime = new Date();
@@ -167,6 +173,7 @@ export class WorkflowExecutorService {
             errorMessage: failureError.message,
             stack: failureError.stack,
             executionContext: sanitizeDataStructure(context),
+            attemptNumber,
           };
 
           this.logger.error(
@@ -203,6 +210,7 @@ export class WorkflowExecutorService {
                 startTime,
                 endTime,
                 duration,
+                attemptNumber,
               });
             } catch (logError) {
               this.logger.error(
@@ -228,6 +236,7 @@ export class WorkflowExecutorService {
           startTime,
           endTime,
           duration,
+          attemptNumber,
         };
 
         try {
@@ -263,10 +272,12 @@ export class WorkflowExecutorService {
         triggerData: sanitizeDataStructure(triggerData),
         errorMessage: error.message,
         stack: error.stack,
+        attemptNumber,
+        jobId,
       };
 
       this.logger.error(
-        `Workflow failed at node: ${currentNodeId ?? 'unknown'} | Execution ${executionId}`,
+        `Workflow failed at node: ${currentNodeId ?? 'unknown'} | Execution ${executionId} (attempt ${attemptNumber}${jobId ? `, job ${jobId}` : ''})`,
         error.stack,
       );
       if (successfulNodes.length > 0) {

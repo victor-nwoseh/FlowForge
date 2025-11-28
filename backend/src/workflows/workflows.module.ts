@@ -26,6 +26,15 @@ import { WorkflowExecutionProcessor } from './processors/workflow-execution.proc
     ]),
     BullModule.registerQueue({
       name: 'workflow-execution',
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 1000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
     }),
     ExecutionsModule,
   ],

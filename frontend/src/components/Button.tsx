@@ -4,7 +4,7 @@ type Variant = 'primary' | 'secondary' | 'danger';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
-  icon?: React.ComponentType<{ size?: number }>;
+  icon?: React.ComponentType<{ size?: number | string }>;
 }
 
 const variantClasses: Record<Variant, string> = {

@@ -18,22 +18,9 @@ export type NodeType =
   | 'sheets'
   | 'webhook';
 
-export interface WorkflowNode extends Node<NodeData> {
-  id: string;
-  type: string;
-  position: {
-    x: number;
-    y: number;
-  };
-  data: NodeData;
-}
+export type WorkflowNode = Node<NodeData> & { data: NodeData };
 
-export interface WorkflowEdge extends Edge {
-  id: string;
-  source: string;
-  target: string;
-  type?: string;
-}
+export type WorkflowEdge = Edge;
 
 export interface Workflow {
   _id?: string;

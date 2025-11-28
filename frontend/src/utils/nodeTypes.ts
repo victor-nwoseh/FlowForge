@@ -16,7 +16,7 @@ type NodeCategory = 'trigger' | 'action' | 'logic';
 interface NodeTypeConfig {
   name: string;
   description: string;
-  icon: React.ComponentType<{ size?: number }>;
+  icon: React.ComponentType<{ size?: number | string }>;
   defaultConfig: Record<string, unknown>;
   color: string;
   category: NodeCategory;

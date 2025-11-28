@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ReactFlow, {
-  Background,
   Connection,
   Controls,
   Edge,
   EdgeChange,
   MiniMap,
+  Node,
   NodeChange,
+  NodeTypes,
   ReactFlowInstance,
   applyEdgeChanges,
   applyNodeChanges,
 } from 'reactflow';
+import { Background, BackgroundVariant } from '@reactflow/background';
 import 'reactflow/dist/style.css';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -27,13 +29,14 @@ import { useWorkflowStore } from '../store/workflow.store';
 import workflowService from '../services/workflow.service';
 import { generateEdgeId, generateNodeId } from '../utils/workflow.utils';
 import type {
+  NodeData,
   Workflow,
   WorkflowEdge,
   WorkflowNode,
 } from '../types/workflow.types';
 import '../styles/workflow.css';
 
-const nodeTypes = {
+const nodeTypes: NodeTypes = {
   custom: CustomNode,
 };
 
@@ -265,7 +268,7 @@ const WorkflowBuilder = () => {
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      setNodes((nds) => applyNodeChanges(changes, nds));
+      setNodes((nds) => applyNodeChanges(changes, nds) as WorkflowNode[]);
     },
     [setNodes],
   );
@@ -287,7 +290,10 @@ const WorkflowBuilder = () => {
         id: generateEdgeId(connection.source, connection.target),
         source: connection.source,
         target: connection.target,
-        type: connection.type,
+        type:
+          'type' in connection && typeof connection.type === 'string'
+            ? connection.type
+            : undefined,
       };
 
       addEdgeToStore(newEdge);
@@ -319,7 +325,6 @@ const WorkflowBuilder = () => {
         return false;
       }
 
-      const sourceNode = nodes.find((node) => node.id === source);
       const targetNode = nodes.find((node) => node.id === target);
 
       if (targetNode?.data.type === 'trigger') {
@@ -398,16 +403,16 @@ const WorkflowBuilder = () => {
   );
 
   const handleNodeClick = useCallback(
-    (_: React.MouseEvent, node: WorkflowNode) => {
-      setSelectedNode(node);
+    (_: React.MouseEvent, node: Node<NodeData>) => {
+      setSelectedNode(node as WorkflowNode);
       setIsConfigOpen(false);
     },
     [setSelectedNode],
   );
 
   const handleNodeDoubleClick = useCallback(
-    (_: React.MouseEvent, node: WorkflowNode) => {
-      setSelectedNode(node);
+    (_: React.MouseEvent, node: Node<NodeData>) => {
+      setSelectedNode(node as WorkflowNode);
       setIsConfigOpen(true);
     },
     [setSelectedNode],
@@ -682,12 +687,16 @@ const WorkflowBuilder = () => {
           </div>
         </header>
         <div className="relative flex flex-1">
-          {isLoadingWorkflow || isManualSaving ? (
+          {isLoadingWorkflow || isManualSaving || isAutoSaving ? (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-sm">
               <div className="flex flex-col items-center gap-2">
                 <LoadingSpinner />
                 <span className="text-sm font-medium text-indigo-600">
-                  {isLoadingWorkflow ? 'Loading workflow...' : 'Saving workflow...'}
+                  {isLoadingWorkflow
+                    ? 'Loading workflow...'
+                    : isManualSaving
+                      ? 'Saving workflow...'
+                      : 'Auto-saving workflow...'}
                 </span>
               </div>
             </div>
@@ -727,7 +736,7 @@ const WorkflowBuilder = () => {
               connectionLineStyle={{ stroke: '#6366f1', strokeWidth: 2, strokeDasharray: '5 5' }}
               fitView
             >
-              <Background variant="lines" gap={24} color="#cbd5f5" />
+              <Background variant={BackgroundVariant.Lines} gap={24} color="#cbd5f5" />
               <MiniMap />
               <Controls position="bottom-right" />
             </ReactFlow>

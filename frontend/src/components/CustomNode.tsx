@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Handle, Position } from 'reactflow';
+import { Handle, Position, type NodeProps } from 'reactflow';
 import {
   Clock,
   Database,
@@ -13,7 +13,7 @@ import {
   Zap,
 } from 'lucide-react';
 
-import type { WorkflowNode } from '../types/workflow.types';
+import type { NodeData } from '../types/workflow.types';
 
 const ICONS = {
   trigger: Play,
@@ -28,7 +28,7 @@ const ICONS = {
   webhook: Webhook,
 } as const;
 
-type CustomNodeProps = WorkflowNode & { selected?: boolean };
+type CustomNodeProps = NodeProps<NodeData>;
 
 const CustomNode = ({ data, selected }: CustomNodeProps) => {
   const Icon = ICONS[data.type as keyof typeof ICONS] ?? Play;

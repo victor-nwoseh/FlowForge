@@ -18,9 +18,15 @@ export class WorkflowExecutionProcessor {
   ): Promise<void> {
     const { workflowId, userId, triggerData = {} } = job.data;
 
-    this.logger.log(
-      `[Job ${job.id}] Processing workflow execution for workflow ${workflowId}`,
-    );
+    if (job.attemptsMade > 0) {
+      this.logger.warn(
+        `[Job ${job.id}] Retry attempt ${job.attemptsMade} for workflow ${workflowId}`,
+      );
+    } else {
+      this.logger.log(
+        `[Job ${job.id}] Processing workflow execution for workflow ${workflowId}`,
+      );
+    }
 
     try {
       await this.workflowExecutorService.executeWorkflow(
@@ -34,6 +40,14 @@ export class WorkflowExecutionProcessor {
         `[Job ${job.id}] Workflow execution failed: ${error.message}`,
         error.stack,
       );
+      if (
+        job.attemptsMade >= (job.opts.attempts ?? 1) &&
+        (job.opts.attempts ?? 1) > 0
+      ) {
+        this.logger.error(
+          `[Job ${job.id}] All retry attempts exhausted for workflow ${workflowId}`,
+        );
+      }
       throw error;
     }
   }

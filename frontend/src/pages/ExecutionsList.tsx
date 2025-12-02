@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle, Clock, Play, XCircle } from 'lucide-react';
 
@@ -49,13 +49,15 @@ const formatDuration = (execution: Execution) => {
 
 const ExecutionsList = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const workflowFilter = searchParams.get('workflowId') ?? undefined;
   const {
     data: executions = [],
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ['executions'],
-    queryFn: () => executionService.getAll(),
+    queryKey: ['executions', workflowFilter],
+    queryFn: () => executionService.getAll(workflowFilter),
   });
 
   const hasExecutions = executions.length > 0;
@@ -95,6 +97,24 @@ const ExecutionsList = () => {
         <p className="mt-1 text-sm text-gray-500">
           Review workflow runs, statuses, and durations.
         </p>
+        {workflowFilter ? (
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-1 text-sm text-indigo-700">
+            Filtering by workflow {workflowFilter}
+            <button
+              type="button"
+              className="text-xs font-semibold uppercase text-indigo-600 hover:text-indigo-800"
+              onClick={() => {
+                setSearchParams((prev) => {
+                  const params = new URLSearchParams(prev);
+                  params.delete('workflowId');
+                  return params;
+                });
+              }}
+            >
+              Clear
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {!hasExecutions ? (

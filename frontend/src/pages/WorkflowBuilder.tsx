@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import ReactFlow, {
   Connection,
   Controls,
@@ -27,6 +28,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import WorkflowStats from '../components/WorkflowStats';
 import { useWorkflowStore } from '../store/workflow.store';
 import workflowService from '../services/workflow.service';
+import api from '../services/api';
 import { generateEdgeId, generateNodeId } from '../utils/workflow.utils';
 import type {
   NodeData,
@@ -120,6 +122,20 @@ const WorkflowBuilder = () => {
   const autoSaveTimeoutRef = useRef<number | null>(null);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [formErrors, setFormErrors] = useState<{ name?: string; description?: string }>({});
+  const canExecuteWorkflow = Boolean(workflowId && workflowId !== 'new');
+
+  const executeMutation = useMutation({
+    mutationFn: async (workflowIdToExecute: string) => {
+      await api.post(`/workflows/${workflowIdToExecute}/execute`, {});
+    },
+    onSuccess: () => {
+      toast.success('Workflow execution started!');
+      navigate('/executions');
+    },
+    onError: () => {
+      toast.error('Failed to execute workflow');
+    },
+  });
 
   const scheduleFitView = useCallback(() => {
     shouldFitViewRef.current = true;
@@ -660,7 +676,7 @@ const WorkflowBuilder = () => {
               <p className="text-xs text-red-500">{formErrors.description}</p>
             ) : null}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               onClick={triggerManualSave}
               icon={Save}
@@ -668,6 +684,20 @@ const WorkflowBuilder = () => {
               disabled={Boolean(formErrors.name || formErrors.description)}
             >
               Save Workflow
+            </Button>
+            <Button
+              onClick={() => {
+                if (!canExecuteWorkflow || !workflowId) {
+                  toast.error('Save the workflow before executing.');
+                  return;
+                }
+                executeMutation.mutate(workflowId);
+              }}
+              icon={Play}
+              className="w-auto"
+              disabled={!canExecuteWorkflow || executeMutation.isPending}
+            >
+              {executeMutation.isPending ? 'Executing...' : 'Execute'}
             </Button>
             <Button
               variant="secondary"
@@ -686,6 +716,11 @@ const WorkflowBuilder = () => {
             </Button>
           </div>
         </header>
+        {!canExecuteWorkflow ? (
+          <div className="border-b border-yellow-200 bg-yellow-50 px-6 py-3 text-sm text-yellow-800">
+            Save the workflow before executing.
+          </div>
+        ) : null}
         <div className="relative flex flex-1">
           {isLoadingWorkflow || isManualSaving || isAutoSaving ? (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-sm">

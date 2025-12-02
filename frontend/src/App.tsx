@@ -5,6 +5,8 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import WorkflowsList from './pages/WorkflowsList';
 import WorkflowBuilder from './pages/WorkflowBuilder';
+import ExecutionsList from './pages/ExecutionsList';
+import ExecutionDetails from './pages/ExecutionDetails';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import { useAuthStore } from './store/auth.store';
@@ -31,6 +33,8 @@ const App: React.FC = () => {
               <Route path="/workflows" element={<WorkflowsList />} />
               <Route path="/workflows/new" element={<WorkflowBuilder />} />
               <Route path="/workflows/:id" element={<WorkflowBuilder />} />
+              <Route path="/executions" element={<ExecutionsList />} />
+              <Route path="/executions/:id" element={<ExecutionDetails />} />
               <Route path="/dashboard" element={<Dashboard />} />
             </Route>
           </Routes>

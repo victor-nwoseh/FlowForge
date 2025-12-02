@@ -1,5 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
+import { History } from 'lucide-react';
 import { useAuthStore } from '../store/auth.store';
 import Button from './Button';
 
@@ -19,12 +20,27 @@ const Navbar: React.FC = () => {
 
         {isAuthenticated ? (
           <div className="flex items-center gap-4">
-            <Link
+            <NavLink
               to="/workflows"
-              className="text-sm text-gray-600 transition hover:text-blue-600"
+              className={({ isActive }) =>
+                `text-sm transition ${
+                  isActive ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:text-blue-600'
+                }`
+              }
             >
               Workflows
-            </Link>
+            </NavLink>
+            <NavLink
+              to="/executions"
+              className={({ isActive }) =>
+                `inline-flex items-center gap-1 text-sm transition ${
+                  isActive ? 'text-blue-600 font-semibold' : 'text-gray-600 hover:text-blue-600'
+                }`
+              }
+            >
+              <History className="h-4 w-4" />
+              Executions
+            </NavLink>
             <span className="text-sm text-gray-600">{user?.email}</span>
             <Button
               variant="secondary"

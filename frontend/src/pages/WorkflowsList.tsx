@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, Copy, Search, Loader2, Download, Upload } from 'lucide-react';
+import { Plus, Trash2, Copy, Search, Loader2, Download, Upload, History } from 'lucide-react';
 
 import Button from '../components/Button';
 import EmptyState from '../components/EmptyState';
 import workflowService from '../services/workflow.service';
+import { executionService } from '../services/execution.service';
 import { generateEdgeId, generateNodeId } from '../utils/workflow.utils';
 import { exportWorkflow, importWorkflow } from '../utils/workflow-export';
 
@@ -226,6 +227,15 @@ const WorkflowsList = () => {
 
   const hasFilteredResults = filteredWorkflows.length > 0;
 
+  const executionQueries = useQueries({
+    queries: filteredWorkflows.map((workflow) => ({
+      queryKey: ['executions', workflow._id],
+      queryFn: () =>
+        workflow._id ? executionService.getAll(workflow._id) : Promise.resolve([]),
+      enabled: Boolean(workflow._id),
+    })),
+  });
+
   if (isLoading) {
     return (
       <div className="p-6">
@@ -339,7 +349,11 @@ const WorkflowsList = () => {
         />
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredWorkflows.map((workflow) => (
+          {filteredWorkflows.map((workflow, index) => {
+            const executionQuery = executionQueries[index];
+            const executionCount = executionQuery?.data?.length ?? 0;
+
+            return (
             <div
               key={workflow._id}
               role="button"
@@ -360,6 +374,19 @@ const WorkflowsList = () => {
                   <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold uppercase text-indigo-600">
                     {(workflow.nodes?.length ?? 0).toString()} nodes
                   </span>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (workflow._id) {
+                        navigate(`/executions?workflowId=${workflow._id}`);
+                      }
+                    }}
+                  >
+                    <History className="h-3.5 w-3.5" />
+                    {executionCount} executions
+                  </button>
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
@@ -412,7 +439,8 @@ const WorkflowsList = () => {
                   : '—'}
               </span>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

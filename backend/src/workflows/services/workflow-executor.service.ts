@@ -46,7 +46,7 @@ export class WorkflowExecutorService {
 
     this.logger.log(`Workflow execution created: ${execution._id}`);
 
-    void this.runExecution(
+    await this.runExecution(
       execution._id.toString(),
       workflowId,
       userId,
@@ -299,6 +299,8 @@ export class WorkflowExecutorService {
         executionId,
         JSON.stringify(failureDetails),
       );
+
+      throw error;
     }
   }
 }

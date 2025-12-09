@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { google } from 'googleapis';
 
 import { ExecutionContext } from '../../executions/interfaces/execution.interface';
@@ -11,20 +10,46 @@ import {
   replaceVariables,
   replaceVariablesInObject,
 } from '../utils/variable-replacement.util';
-
-const SHEETS_SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
+import { ConnectionsService } from '../../connections/connections.service';
 
 @Injectable()
 export class SheetsHandler implements INodeHandler {
   private readonly logger = new Logger(SheetsHandler.name);
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly connectionsService: ConnectionsService) {}
 
   async execute(
     nodeData: any,
     context: ExecutionContext,
   ): Promise<NodeHandlerResponse> {
     try {
+      const userId = context.userId;
+      if (!userId) {
+        return {
+          success: false,
+          output: null,
+          error: 'User ID missing from execution context',
+        };
+      }
+
+      let connection = await this.connectionsService.findByUserAndService(
+        userId,
+        'google',
+      );
+
+      if (!connection) {
+        return {
+          success: false,
+          output: null,
+          error:
+            'Google Sheets not connected. Please authorize Google in Integrations page.',
+        };
+      }
+
+      if (connection.expiresAt && new Date() > connection.expiresAt) {
+        connection = await this.connectionsService.refreshGoogleToken(userId);
+      }
+
       const config = nodeData?.config ?? {};
       const { spreadsheetId, range, operation, values } = config;
 
@@ -39,17 +64,6 @@ export class SheetsHandler implements INodeHandler {
       if (typeof operation !== 'string' || operation.trim().length === 0) {
         throw new Error('Google Sheets "operation" must be specified.');
       }
-
-      const clientEmail = this.configService.get<string>('GOOGLE_SHEETS_CLIENT_EMAIL');
-      const privateKeyRaw = this.configService.get<string>('GOOGLE_SHEETS_PRIVATE_KEY');
-
-      if (!clientEmail || !privateKeyRaw) {
-        throw new Error(
-          'Google Sheets credentials missing. Ensure GOOGLE_SHEETS_CLIENT_EMAIL and GOOGLE_SHEETS_PRIVATE_KEY are set.',
-        );
-      }
-
-      const privateKey = privateKeyRaw.replace(/\\n/g, '\n');
 
       const processedSpreadsheetId = replaceVariables(spreadsheetId, context);
       const processedRange = replaceVariables(range, context);
@@ -70,15 +84,12 @@ export class SheetsHandler implements INodeHandler {
         );
       }
 
-      const auth = new google.auth.GoogleAuth({
-        credentials: {
-          client_email: clientEmail,
-          private_key: privateKey,
-        },
-        scopes: SHEETS_SCOPES,
+      const oauth2Client = new google.auth.OAuth2();
+      oauth2Client.setCredentials({
+        access_token: connection.accessToken,
       });
 
-      const sheets = google.sheets({ version: 'v4', auth });
+      const sheets = google.sheets({ version: 'v4', auth: oauth2Client });
 
       if (processedOperation === 'read') {
         const response = await sheets.spreadsheets.values.get({

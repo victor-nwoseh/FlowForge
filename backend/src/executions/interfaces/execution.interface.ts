@@ -16,6 +16,7 @@ export type ExecutionStatus = 'pending' | 'running' | 'success' | 'failed';
 export interface ExecutionContext {
   variables: Record<string, any>;
   trigger: any;
+  userId: string;
   [key: string]: any;
 }
 

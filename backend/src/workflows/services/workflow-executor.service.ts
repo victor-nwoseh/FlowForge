@@ -109,6 +109,7 @@ export class WorkflowExecutorService {
       context = {
         variables: {},
         trigger: triggerData,
+        userId,
       };
 
       context._workflowId = workflowId;

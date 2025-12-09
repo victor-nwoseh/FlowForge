@@ -18,6 +18,7 @@ import { WebhookHandler } from './handlers/webhook.handler';
 import { NodeHandlerRegistryService } from './services/node-handler-registry.service';
 import { WorkflowExecutorService } from './services/workflow-executor.service';
 import { WorkflowExecutionProcessor } from './processors/workflow-execution.processor';
+import { ConnectionsModule } from '../connections/connections.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { WorkflowExecutionProcessor } from './processors/workflow-execution.proc
       },
     }),
     ExecutionsModule,
+    ConnectionsModule,
   ],
   controllers: [WorkflowsController, WebhookController],
   providers: [

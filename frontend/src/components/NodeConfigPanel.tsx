@@ -1,10 +1,19 @@
-import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { AlertCircle, X } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
 import Button from './Button';
 import Input from './Input';
 import { useWorkflowStore } from '../store/workflow.store';
+import api from '../services/api';
+
+type ConnectionSummary = {
+  service: 'slack' | 'google';
+  metadata?: Record<string, any>;
+  createdAt?: string;
+  hasToken?: boolean;
+};
 
 const TRIGGER_OPTIONS = [
   { label: 'Manual', value: 'manual' },
@@ -29,6 +38,11 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
   const deleteNode = useWorkflowStore((state) => state.deleteNode);
   const setSelectedNode = useWorkflowStore((state) => state.setSelectedNode);
 
+  const { data: connections = [] } = useQuery<ConnectionSummary[]>({
+    queryKey: ['connections'],
+    queryFn: () => api.get('/connections'),
+  });
+
   const [label, setLabel] = useState('');
   const [config, setConfig] = useState<Record<string, any>>({});
 
@@ -39,10 +53,6 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
     }
   }, [selectedNode]);
 
-  if (!selectedNode || !isOpen) {
-    return null;
-  }
-
   const handleConfigChange = (key: string, value: string | number) => {
     setConfig((prev) => ({
       ...prev,
@@ -51,6 +61,8 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
   };
 
   const handleSave = () => {
+    if (!selectedNode) return;
+
     const updatedData = {
       ...selectedNode.data,
       label,
@@ -84,6 +96,82 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
     handleClose();
   };
 
+  const isServiceConnected = useMemo(
+    () => (service: string) => connections.some((conn) => conn.service === service),
+    [connections],
+  );
+
+  const googleConnected = isServiceConnected('google');
+  const slackConnected = isServiceConnected('slack');
+
+  const nodeType = selectedNode?.data?.type;
+  const requiresSlack =
+    nodeType === 'slack' ||
+    (nodeType === 'action' && config?.actionType === 'slack_message');
+  const requiresGoogle =
+    nodeType === 'email' ||
+    nodeType === 'sheets' ||
+    (nodeType === 'action' && config?.actionType === 'send_email');
+
+  const saveDisabled =
+    !label || (requiresSlack && !slackConnected) || (requiresGoogle && !googleConnected);
+
+  if (!selectedNode || !isOpen) {
+    return null;
+  }
+
+  const renderConnectionWarning = (service: 'slack' | 'google', message: string) => {
+    const connected = service === 'slack' ? slackConnected : googleConnected;
+    if (connected) return null;
+
+    return (
+      <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+        <div className="flex-1">
+          <p className="text-sm text-amber-800">{message}</p>
+          <button
+            onClick={() => (window.location.href = '/integrations')}
+            className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+          >
+            Go to Integrations
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const warningBanner = () => {
+    if (requiresSlack && !slackConnected) {
+      return renderConnectionWarning(
+        'slack',
+        'Warning: Slack not connected. Connect in Integrations to use this node.',
+      );
+    }
+
+    if (nodeType === 'email' && !googleConnected) {
+      return renderConnectionWarning(
+        'google',
+        'Warning: Gmail not connected. Connect in Integrations to use this node.',
+      );
+    }
+
+    if (nodeType === 'sheets' && !googleConnected) {
+      return renderConnectionWarning(
+        'google',
+        'Warning: Google Sheets not connected. Connect in Integrations to use this node.',
+      );
+    }
+
+    if (nodeType === 'action' && config?.actionType === 'send_email' && !googleConnected) {
+      return renderConnectionWarning(
+        'google',
+        'Warning: Gmail not connected. Connect in Integrations to use this node.',
+      );
+    }
+
+    return null;
+  };
+
   const renderTypeSpecificFields = () => {
     switch (selectedNode.data.type) {
       case 'trigger':
@@ -110,6 +198,16 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
       case 'action':
         return (
           <div className="space-y-4">
+            {config?.actionType === 'slack_message' &&
+              renderConnectionWarning(
+                'slack',
+                'Warning: Slack not connected. Connect in Integrations to use this node.',
+              )}
+            {config?.actionType === 'send_email' &&
+              renderConnectionWarning(
+                'google',
+                'Warning: Gmail not connected. Connect in Integrations to use this node.',
+              )}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
                 Action Type
@@ -153,6 +251,101 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
                 }
               />
             </div>
+          </div>
+        );
+      case 'slack':
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Channel</label>
+              <Input
+                placeholder="#general"
+                value={config.channel || ''}
+                onChange={(event) => handleConfigChange('channel', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Message</label>
+              <textarea
+                className="h-24 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                placeholder="Enter message content..."
+                value={config.message || ''}
+                onChange={(event) => handleConfigChange('message', event.target.value)}
+              />
+            </div>
+          </div>
+        );
+      case 'email':
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">To</label>
+              <Input
+                placeholder="user@example.com"
+                value={config.to || ''}
+                onChange={(event) => handleConfigChange('to', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Subject</label>
+              <Input
+                placeholder="Subject"
+                value={config.subject || ''}
+                onChange={(event) => handleConfigChange('subject', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Body</label>
+              <textarea
+                className="h-24 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                placeholder="Email body..."
+                value={config.body || ''}
+                onChange={(event) => handleConfigChange('body', event.target.value)}
+              />
+            </div>
+          </div>
+        );
+      case 'sheets':
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Spreadsheet ID</label>
+              <Input
+                placeholder="Spreadsheet ID"
+                value={config.spreadsheetId || ''}
+                onChange={(event) => handleConfigChange('spreadsheetId', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Range</label>
+              <Input
+                placeholder="Sheet1!A1:B2"
+                value={config.range || ''}
+                onChange={(event) => handleConfigChange('range', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Operation</label>
+              <select
+                value={config.operation || 'read'}
+                onChange={(event) => handleConfigChange('operation', event.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              >
+                <option value="read">Read</option>
+                <option value="write">Write</option>
+              </select>
+            </div>
+            {config.operation === 'write' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">Values (JSON 2D array)</label>
+                <textarea
+                  className="h-24 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  placeholder='e.g., [["a","b"],["c","d"]]'
+                  value={config.values || ''}
+                  onChange={(event) => handleConfigChange('values', event.target.value)}
+                />
+              </div>
+            )}
           </div>
         );
       case 'condition':
@@ -232,6 +425,7 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
               />
             </div>
 
+            {warningBanner()}
             {renderTypeSpecificFields()}
           </div>
         </div>
@@ -240,7 +434,7 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
           <Button variant="danger" onClick={handleDelete} className="flex-1">
             Delete Node
           </Button>
-          <Button onClick={handleSave} disabled={!label} className="flex-1">
+          <Button onClick={handleSave} disabled={saveDisabled} className="flex-1">
             Save Changes
           </Button>
           <Button variant="secondary" onClick={handleClose} className="flex-1">

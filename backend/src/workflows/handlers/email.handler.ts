@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { createTransport } from 'nodemailer';
 
 import { ExecutionContext } from '../../executions/interfaces/execution.interface';
@@ -8,18 +7,46 @@ import {
   NodeHandlerResponse,
 } from '../interfaces/node-handler.interface';
 import { replaceVariables } from '../utils/variable-replacement.util';
+import { ConnectionsService } from '../../connections/connections.service';
 
 @Injectable()
 export class EmailHandler implements INodeHandler {
   private readonly logger = new Logger(EmailHandler.name);
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly connectionsService: ConnectionsService) {}
 
   async execute(
     nodeData: any,
     context: ExecutionContext,
   ): Promise<NodeHandlerResponse> {
     try {
+      const userId = context.userId;
+      if (!userId) {
+        return {
+          success: false,
+          output: null,
+          error: 'User ID missing from execution context',
+        };
+      }
+
+      let connection = await this.connectionsService.findByUserAndService(
+        userId,
+        'google',
+      );
+
+      if (!connection) {
+        return {
+          success: false,
+          output: null,
+          error:
+            'Gmail not connected. Please authorize Google in Integrations page.',
+        };
+      }
+
+      if (connection.expiresAt && new Date() > connection.expiresAt) {
+        connection = await this.connectionsService.refreshGoogleToken(userId);
+      }
+
       const config = nodeData?.config ?? {};
       const { to, subject, body } = config;
 
@@ -35,36 +62,21 @@ export class EmailHandler implements INodeHandler {
         throw new Error('Email "body" field must be a non-empty string.');
       }
 
-      const smtpHost = this.configService.get<string>('SMTP_HOST');
-      const smtpPort = parseInt(
-        this.configService.get<string>('SMTP_PORT') ?? '587',
-        10,
-      );
-      const smtpUser = this.configService.get<string>('SMTP_USER');
-      const smtpPass = this.configService.get<string>('SMTP_PASS');
-
-      if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
-        throw new Error(
-          'SMTP configuration is incomplete. Ensure SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS are set.',
-        );
-      }
-
       const processedTo = replaceVariables(to, context);
       const processedSubject = replaceVariables(subject, context);
       const processedBody = replaceVariables(body, context);
 
       const transporter = createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
+        service: 'gmail',
         auth: {
-          user: smtpUser,
-          pass: smtpPass,
+          type: 'OAuth2',
+          user: 'me',
+          accessToken: connection.accessToken,
         },
       });
 
       const mailOptions = {
-        from: smtpUser,
+        from: 'me',
         to: processedTo,
         subject: processedSubject,
         text: processedBody,

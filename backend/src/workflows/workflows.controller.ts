@@ -20,6 +20,7 @@ import { CreateWorkflowDto } from './dto/create-workflow.dto';
 import { UpdateWorkflowDto } from './dto/update-workflow.dto';
 import { WorkflowsService } from './workflows.service';
 import { validateWorkflowStructure } from './utils/workflow-validation.util';
+import { ConnectionsService } from '../connections/connections.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('workflows')
@@ -28,6 +29,7 @@ export class WorkflowsController {
     private readonly workflowsService: WorkflowsService,
     @InjectQueue('workflow-execution')
     private readonly workflowQueue: Queue,
+    private readonly connectionsService: ConnectionsService,
   ) {}
 
   @Post()
@@ -66,7 +68,8 @@ export class WorkflowsController {
     @Body() body: any,
   ) {
     try {
-      const workflow = await this.workflowsService.findOne(id, req.user.id);
+      const userId = req.user.id;
+      const workflow = await this.workflowsService.findOne(id, userId);
 
       if (!workflow.nodes || workflow.nodes.length === 0) {
         throw new HttpException(
@@ -83,9 +86,50 @@ export class WorkflowsController {
         );
       }
 
+      const missingServices: string[] = [];
+
+      for (const node of workflow.nodes) {
+        const nodeType = node?.data?.type;
+        if (!nodeType) {
+          continue;
+        }
+
+        if (nodeType === 'slack') {
+          const hasSlack = await this.connectionsService.findByUserAndService(
+            userId,
+            'slack',
+          );
+          if (!hasSlack && !missingServices.includes('slack')) {
+            missingServices.push('slack');
+          }
+        }
+
+        if (nodeType === 'email' || nodeType === 'sheets') {
+          const hasGoogle = await this.connectionsService.findByUserAndService(
+            userId,
+            'google',
+          );
+          if (!hasGoogle && !missingServices.includes('google')) {
+            missingServices.push(nodeType === 'email' ? 'gmail' : 'sheets');
+          }
+        }
+      }
+
+      if (missingServices.length > 0) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: 'Missing required connections',
+            missingServices,
+            error: 'Connect required services in Integrations before executing',
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       const job = await this.workflowQueue.add({
         workflowId: id,
-        userId: req.user.id,
+        userId,
         triggerData: body?.triggerData || {},
       });
 
@@ -102,13 +146,7 @@ export class WorkflowsController {
       }
 
       if (error instanceof HttpException) {
-        const status = error.getStatus();
-        if (status === HttpStatus.BAD_REQUEST) {
-          throw new HttpException(
-            `Invalid workflow: ${error.message}`,
-            HttpStatus.BAD_REQUEST,
-          );
-        }
+        // Preserve original HttpException payload (e.g., missingServices)
         throw error;
       }
 

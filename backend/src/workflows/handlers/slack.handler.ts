@@ -49,27 +49,59 @@ export class SlackHandler implements INodeHandler {
         throw new Error('Slack message must be a non-empty string.');
       }
 
-      const channel =
+      const channelInput =
         typeof config.channel === 'string' && config.channel.trim().length > 0
           ? config.channel.trim()
           : '#general';
+      const channelName = channelInput.replace(/^#/, '');
 
       const processedMessage = replaceVariables(rawMessage, context);
       const payload: Record<string, any> = {
-        channel,
+        channel: channelInput,
         text: processedMessage,
       };
 
-      const response = await axios.post(
-        'https://slack.com/api/chat.postMessage',
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${connection.accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        },
-      );
+      const headers = {
+        Authorization: `Bearer ${connection.accessToken}`,
+        'Content-Type': 'application/json',
+      };
+
+      const postMessage = async (channelTarget: string) => {
+        const resp = await axios.post(
+          'https://slack.com/api/chat.postMessage',
+          { ...payload, channel: channelTarget },
+          { headers },
+        );
+        return resp;
+      };
+
+      let response = await postMessage(channelInput);
+
+      // If the bot is not in the channel, try to join public channels and retry
+      if (response.data?.error === 'not_in_channel') {
+        // Fetch public channels to find the channel ID
+        const listResp = await axios.get('https://slack.com/api/conversations.list', {
+          headers,
+          params: { types: 'public_channel', limit: 200 },
+        });
+
+        const channelMatch = listResp.data?.channels?.find(
+          (c: any) => c?.name === channelName || c?.name_normalized === channelName,
+        );
+
+        if (!channelMatch?.id) {
+          throw new Error('Bot not in channel and channel not found to join');
+        }
+
+        // Attempt to join then retry posting
+        await axios.post(
+          'https://slack.com/api/conversations.join',
+          { channel: channelMatch.id },
+          { headers },
+        );
+
+        response = await postMessage(channelMatch.id);
+      }
 
       if (!response.data?.ok) {
         const errorMsg =

@@ -10,11 +10,11 @@ import { Response } from 'express';
 import axios from 'axios';
 import { ConfigService } from '@nestjs/config';
 
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { ConnectionsService } from '../../connections/connections.service';
 
+import { JwtAuthQueryGuard } from '../guards/jwt-auth-query.guard';
+
 @Controller('auth')
-@UseGuards(JwtAuthGuard)
 export class OAuthController {
   private readonly slackClientId: string;
   private readonly slackClientSecret: string;
@@ -58,6 +58,7 @@ export class OAuthController {
   }
 
   @Get('slack')
+  @UseGuards(JwtAuthQueryGuard)
   async slackAuth(@Req() req: any, @Res() res: Response) {
     const userId = req.user?.id ?? req.user?.userId;
 
@@ -71,7 +72,6 @@ export class OAuthController {
   }
 
   @Get('slack/callback')
-  @UseGuards()
   async slackCallback(
     @Query('code') code: string,
     @Query('state') userId: string,
@@ -106,6 +106,7 @@ export class OAuthController {
   }
 
   @Get('google')
+  @UseGuards(JwtAuthQueryGuard)
   async googleAuth(@Req() req: any, @Res() res: Response) {
     const userId = req.user?.id ?? req.user?.userId;
 
@@ -125,7 +126,6 @@ export class OAuthController {
   }
 
   @Get('google/callback')
-  @UseGuards()
   async googleCallback(
     @Query('code') code: string,
     @Query('state') userId: string,

@@ -59,7 +59,12 @@ const Integrations: React.FC = () => {
   }, [location.pathname, location.search, navigate]);
 
   const handleConnect = (service: 'slack' | 'google') => {
-    window.location.href = `${apiBase}/auth/${service}`;
+    const token = localStorage.getItem('flowforge_token');
+    const url = new URL(`${apiBase}/auth/${service}`);
+    if (token) {
+      url.searchParams.set('token', token);
+    }
+    window.location.href = url.toString();
   };
 
   const isConnected = (service: 'slack' | 'google') =>

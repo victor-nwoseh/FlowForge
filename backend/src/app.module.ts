@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { WorkflowsModule } from './workflows/workflows.module';
 import { ExecutionsModule } from './executions/executions.module';
+import { ConnectionsModule } from './connections/connections.module';
 
 const mongoUri = process.env.MONGODB_URI ?? 'mongodb://localhost:27017/flowforge';
 
@@ -24,6 +25,7 @@ const mongoUri = process.env.MONGODB_URI ?? 'mongodb://localhost:27017/flowforge
     AuthModule,
     WorkflowsModule,
     ExecutionsModule,
+    ConnectionsModule,
   ],
   controllers: [AppController],
   providers: [],

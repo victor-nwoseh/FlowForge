@@ -132,7 +132,16 @@ const WorkflowBuilder = () => {
       toast.success('Workflow execution started!');
       navigate('/executions');
     },
-    onError: () => {
+    onError: (error: any) => {
+      const missing = error?.response?.data?.missingServices;
+
+      if (Array.isArray(missing) && missing.length > 0) {
+        const servicesList = missing.join(', ');
+        toast.error(`Please connect ${servicesList} in Integrations before executing.`);
+        navigate('/integrations');
+        return;
+      }
+
       toast.error('Failed to execute workflow');
     },
   });

@@ -614,7 +614,7 @@ const WorkflowBuilder = () => {
         return;
       }
 
-      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedNode) {
+      if (event.key === 'Delete' && selectedNode) {
         event.preventDefault();
         deleteSelectedNode();
         return;

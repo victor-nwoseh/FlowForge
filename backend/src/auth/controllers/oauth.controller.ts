@@ -116,7 +116,7 @@ export class OAuthController {
     googleAuthUrl.searchParams.set('response_type', 'code');
     googleAuthUrl.searchParams.set(
       'scope',
-      'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets',
+      'https://mail.google.com/ https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email',
     );
     googleAuthUrl.searchParams.set('access_type', 'offline');
     googleAuthUrl.searchParams.set('state', userId);
@@ -143,11 +143,26 @@ export class OAuthController {
       const { access_token, refresh_token, expires_in } = tokenResponse.data;
       const expiresAt = expires_in ? new Date(Date.now() + expires_in * 1000) : undefined;
 
+      let metadata: Record<string, any> = {};
+      try {
+        const profileResp = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+          headers: { Authorization: `Bearer ${access_token}` },
+        });
+        if (profileResp.data?.email) {
+          metadata.email = profileResp.data.email;
+        }
+      } catch (profileError) {
+        // Proceed without metadata if userinfo fails
+        const errMsg =
+          profileError instanceof Error ? profileError.message : String(profileError);
+        console.warn('Google userinfo fetch failed:', errMsg);
+      }
+
       await this.connectionsService.create(userId, 'google', {
         accessToken: access_token,
         refreshToken: refresh_token,
         expiresAt,
-      });
+      }, metadata);
 
       return res.redirect(`${this.frontendUrl}/integrations?success=google`);
     } catch (error) {

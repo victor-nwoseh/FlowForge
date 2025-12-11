@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { createTransport } from 'nodemailer';
 
 import { ExecutionContext } from '../../executions/interfaces/execution.interface';
@@ -13,7 +14,10 @@ import { ConnectionsService } from '../../connections/connections.service';
 export class EmailHandler implements INodeHandler {
   private readonly logger = new Logger(EmailHandler.name);
 
-  constructor(private readonly connectionsService: ConnectionsService) {}
+  constructor(
+    private readonly connectionsService: ConnectionsService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async execute(
     nodeData: any,
@@ -47,6 +51,13 @@ export class EmailHandler implements INodeHandler {
         connection = await this.connectionsService.refreshGoogleToken(userId);
       }
 
+      const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
+      const clientSecret = this.configService.get<string>('GOOGLE_CLIENT_SECRET');
+
+      if (!clientId || !clientSecret) {
+        throw new Error('Google OAuth client configuration missing on server');
+      }
+
       const config = nodeData?.config ?? {};
       const { to, subject, body } = config;
 
@@ -66,17 +77,25 @@ export class EmailHandler implements INodeHandler {
       const processedSubject = replaceVariables(subject, context);
       const processedBody = replaceVariables(body, context);
 
+      const fromEmail =
+        (connection.metadata as any)?.email ||
+        (connection.metadata as any)?.user ||
+        'me';
+
       const transporter = createTransport({
         service: 'gmail',
         auth: {
           type: 'OAuth2',
-          user: 'me',
+          user: fromEmail,
+          clientId,
+          clientSecret,
           accessToken: connection.accessToken,
+          refreshToken: connection.refreshToken ?? undefined,
         },
       });
 
       const mailOptions = {
-        from: 'me',
+        from: fromEmail,
         to: processedTo,
         subject: processedSubject,
         text: processedBody,

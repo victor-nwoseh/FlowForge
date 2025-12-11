@@ -15,17 +15,38 @@ type ConnectionSummary = {
   hasToken?: boolean;
 };
 
-const TRIGGER_OPTIONS = [
-  { label: 'Manual', value: 'manual' },
-  { label: 'Schedule', value: 'schedule' },
-  { label: 'Webhook', value: 'webhook' },
-];
-
 const ACTION_OPTIONS = [
   { label: 'Send Slack Message', value: 'slack_message' },
   { label: 'Send Email', value: 'send_email' },
   { label: 'HTTP Request', value: 'http_request' },
 ];
+
+const CRON_PRESETS = [
+  { label: 'Every day at 9 AM', value: '0 9 * * *' },
+  { label: 'Every Monday at 10 AM', value: '0 10 * * 1' },
+  { label: 'Every hour', value: '0 * * * *' },
+  { label: 'Every 15 minutes', value: '*/15 * * * *' },
+  { label: 'Weekdays at 9 AM', value: '0 9 * * 1-5' },
+];
+
+const describeCron = (value: string) => {
+  const v = value.trim();
+  if (!v.match(/^\S+\s+\S+\s+\S+\s+\S+\s+\S+$/)) return '';
+  switch (v) {
+    case '0 9 * * *':
+      return 'Runs every day at 9:00 AM';
+    case '0 10 * * 1':
+      return 'Runs every Monday at 10:00 AM';
+    case '0 * * * *':
+      return 'Runs at the start of every hour';
+    case '*/15 * * * *':
+      return 'Runs every 15 minutes';
+    case '0 9 * * 1-5':
+      return 'Runs weekdays at 9:00 AM';
+    default:
+      return 'Runs per the specified cron schedule';
+  }
+};
 
 interface NodeConfigPanelProps {
   isOpen: boolean;
@@ -45,11 +66,17 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
 
   const [label, setLabel] = useState('');
   const [config, setConfig] = useState<Record<string, any>>({});
+  const [triggerType, setTriggerType] = useState<'manual' | 'scheduled'>('manual');
+  const [cronExpression, setCronExpression] = useState('');
 
   useEffect(() => {
     if (selectedNode) {
       setLabel(selectedNode.data.label || '');
       setConfig(selectedNode.data.config || {});
+      const nodeConfig = selectedNode.data.config || {};
+      const scheduled = nodeConfig.scheduled === true;
+      setTriggerType(scheduled ? 'scheduled' : 'manual');
+      setCronExpression(nodeConfig.cronExpression || '');
     }
   }, [selectedNode]);
 
@@ -63,10 +90,22 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
   const handleSave = () => {
     if (!selectedNode) return;
 
+    const finalConfig = { ...config };
+
+    if (selectedNode.data.type === 'trigger') {
+      if (triggerType === 'scheduled') {
+        finalConfig.scheduled = true;
+        finalConfig.cronExpression = cronExpression.trim();
+      } else {
+        finalConfig.scheduled = false;
+        delete finalConfig.cronExpression;
+      }
+    }
+
     const updatedData = {
       ...selectedNode.data,
       label,
-      config,
+      config: finalConfig,
     };
 
     updateNode(selectedNode.id, { data: updatedData });
@@ -114,7 +153,10 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
     (nodeType === 'action' && config?.actionType === 'send_email');
 
   const saveDisabled =
-    !label || (requiresSlack && !slackConnected) || (requiresGoogle && !googleConnected);
+    !label ||
+    (requiresSlack && !slackConnected) ||
+    (requiresGoogle && !googleConnected) ||
+    (nodeType === 'trigger' && triggerType === 'scheduled' && !cronExpression.trim().match(/^\S+\s+\S+\s+\S+\s+\S+\s+\S+$/));
 
   if (!selectedNode || !isOpen) {
     return null;
@@ -176,23 +218,83 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
     switch (selectedNode.data.type) {
       case 'trigger':
         return (
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
-              Trigger Type
-            </label>
-            <select
-              value={config.triggerType || TRIGGER_OPTIONS[0].value}
-              onChange={(event) =>
-                handleConfigChange('triggerType', event.target.value)
-              }
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-            >
-              {TRIGGER_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700">Trigger Type</label>
+              <div className="mt-2 flex items-center gap-4">
+                <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="radio"
+                    name="triggerType"
+                    value="manual"
+                    checked={triggerType === 'manual'}
+                    onChange={() => setTriggerType('manual')}
+                  />
+                  Manual Trigger
+                </label>
+                <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="radio"
+                    name="triggerType"
+                    value="scheduled"
+                    checked={triggerType === 'scheduled'}
+                    onChange={() => setTriggerType('scheduled')}
+                  />
+                  Scheduled Trigger
+                </label>
+              </div>
+            </div>
+
+            {triggerType === 'scheduled' && (
+              <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Cron Expression</label>
+                  <input
+                    type="text"
+                    value={cronExpression}
+                    onChange={(e) => setCronExpression(e.target.value)}
+                    placeholder="0 9 * * *"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  />
+                  {!cronExpression.trim().match(/^\S+\s+\S+\s+\S+\s+\S+\s+\S+$/) && (
+                    <p className="text-xs text-red-500">
+                      Invalid format. Cron needs 5 parts: minute hour day month weekday.
+                    </p>
+                  )}
+                  {describeCron(cronExpression) && (
+                    <p className="text-xs text-gray-600">Schedule: {describeCron(cronExpression)}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-gray-700">Presets</p>
+                  <div className="flex flex-wrap gap-2">
+                    {CRON_PRESETS.map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => setCronExpression(preset.value)}
+                        className="rounded border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:border-indigo-400 hover:text-indigo-600"
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <p className="text-xs text-gray-500">
+                  Cron format: minute hour day month weekday. Need help?{' '}
+                  <a
+                    href="https://crontab.guru"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-indigo-600 hover:underline"
+                  >
+                    crontab.guru
+                  </a>
+                </p>
+              </div>
+            )}
           </div>
         );
       case 'action':

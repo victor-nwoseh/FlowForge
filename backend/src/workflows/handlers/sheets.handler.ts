@@ -70,18 +70,40 @@ export class SheetsHandler implements INodeHandler {
       const processedOperation = replaceVariables(operation, context)
         .trim()
         .toLowerCase();
-      const processedValues = Array.isArray(values)
-        ? replaceVariablesInObject(values, context)
-        : undefined;
+
+      let processedValues: any = values;
+      // If values came in as a JSON string from the UI, parse it.
+      if (typeof processedValues === 'string') {
+        try {
+          processedValues = JSON.parse(processedValues);
+        } catch (parseError) {
+          throw new Error(
+            'Google Sheets "values" must be a valid JSON 2D array (e.g., [["A","B"],["C","D"]]).',
+          );
+        }
+      }
+
+      if (Array.isArray(processedValues)) {
+        // If it's a 1D array, wrap as a single row for convenience
+        if (processedValues.length > 0 && !Array.isArray(processedValues[0])) {
+          processedValues = [processedValues];
+        }
+        processedValues = replaceVariablesInObject(processedValues, context);
+      }
 
       if (!['read', 'write'].includes(processedOperation)) {
         throw new Error('Google Sheets "operation" must be either "read" or "write".');
       }
 
-      if (processedOperation === 'write' && !Array.isArray(processedValues)) {
-        throw new Error(
-          'Google Sheets "values" must be provided as a 2D array for write operations.',
-        );
+      if (processedOperation === 'write') {
+        if (
+          !Array.isArray(processedValues) ||
+          (processedValues.length > 0 && !Array.isArray(processedValues[0]))
+        ) {
+          throw new Error(
+            'Google Sheets "values" must be provided as a 2D array for write operations.',
+          );
+        }
       }
 
       const oauth2Client = new google.auth.OAuth2();

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import cronstrue from 'cronstrue';
 
 import Button from './Button';
 import Input from './Input';
@@ -32,19 +33,10 @@ const CRON_PRESETS = [
 const describeCron = (value: string) => {
   const v = value.trim();
   if (!v.match(/^\S+\s+\S+\s+\S+\s+\S+\s+\S+$/)) return '';
-  switch (v) {
-    case '0 9 * * *':
-      return 'Runs every day at 9:00 AM';
-    case '0 10 * * 1':
-      return 'Runs every Monday at 10:00 AM';
-    case '0 * * * *':
-      return 'Runs at the start of every hour';
-    case '*/15 * * * *':
-      return 'Runs every 15 minutes';
-    case '0 9 * * 1-5':
-      return 'Runs weekdays at 9:00 AM';
-    default:
-      return 'Runs per the specified cron schedule';
+  try {
+    return `Runs ${cronstrue.toString(v, { use24HourTimeFormat: true })}`;
+  } catch {
+    return 'Runs per the specified cron schedule';
   }
 };
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import cronstrue from 'cronstrue';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -16,14 +17,12 @@ type Schedule = {
 };
 
 const cronToHuman = (cron: string) => {
-  const map: Record<string, string> = {
-    '0 9 * * *': 'Every day at 9:00 AM',
-    '0 10 * * 1': 'Every Monday at 10:00 AM',
-    '0 * * * *': 'Every hour',
-    '*/15 * * * *': 'Every 15 minutes',
-    '0 9 * * 1-5': 'Weekdays at 9:00 AM',
-  };
-  return map[cron] || cron;
+  try {
+    const text = cronstrue.toString(cron, { use24HourTimeFormat: true });
+    return `Runs ${text}`;
+  } catch {
+    return cron;
+  }
 };
 
 const Schedules: React.FC = () => {

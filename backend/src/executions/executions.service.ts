@@ -19,11 +19,13 @@ export class ExecutionsService {
     workflowId: string,
     userId: string,
     triggerData: any = {},
+    triggerSource: string = 'manual',
   ): Promise<ExecutionDocument> {
     const execution = new this.executionModel({
       workflowId,
       userId,
       triggerData,
+      triggerSource,
       status: 'pending',
     });
 

@@ -156,7 +156,11 @@ const Schedules: React.FC = () => {
                       {schedule.lastRunAt ? new Date(schedule.lastRunAt).toLocaleString() : 'Never'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700">
-                      {schedule.isActive ? schedule.nextRunAt || 'Scheduled' : 'Paused'}
+                      {schedule.isActive
+                        ? schedule.nextRunAt
+                          ? new Date(schedule.nextRunAt).toLocaleString()
+                          : 'Scheduled'
+                        : 'Paused'}
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <div className="flex items-center gap-2">

@@ -19,6 +19,7 @@ export interface Execution {
   userId: string;
   status: ExecutionStatus;
   triggerData: any;
+  triggerSource?: string;
   logs: NodeExecutionLog[];
   error?: string;
   startTime?: string;

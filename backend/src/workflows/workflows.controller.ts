@@ -131,6 +131,7 @@ export class WorkflowsController {
         workflowId: id,
         userId,
         triggerData: body?.triggerData || {},
+        triggerSource: 'manual',
       });
 
       return {

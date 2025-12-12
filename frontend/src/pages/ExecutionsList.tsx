@@ -155,7 +155,7 @@ const ExecutionsList = () => {
                       execution.workflowId ??
                       'Untitled workflow'}
                     <p className="text-sm text-gray-500">
-                      Trigger: {execution.triggerData?.source ?? 'manual'}
+                      Trigger: {execution.triggerSource ?? execution.triggerData?.source ?? 'manual'}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 font-semibold text-gray-800">

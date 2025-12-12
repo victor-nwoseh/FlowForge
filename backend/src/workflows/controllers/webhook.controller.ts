@@ -48,6 +48,7 @@ export class WebhookController {
         workflowId,
         userId: workflow.userId,
         triggerData,
+        triggerSource: 'webhook',
       });
 
       this.logger.log(`Workflow ${workflowId} triggered via webhook`);

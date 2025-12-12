@@ -14,9 +14,14 @@ export class WorkflowExecutionProcessor {
 
   @Process()
   async handleExecution(
-    job: Job<{ workflowId: string; userId: string; triggerData?: any }>,
+    job: Job<{
+      workflowId: string;
+      userId: string;
+      triggerData?: any;
+      triggerSource?: 'manual' | 'webhook' | 'scheduled';
+    }>,
   ): Promise<void> {
-    const { workflowId, userId, triggerData = {} } = job.data;
+    const { workflowId, userId, triggerData = {}, triggerSource } = job.data;
 
     if (job.attemptsMade > 0) {
       this.logger.warn(
@@ -35,6 +40,7 @@ export class WorkflowExecutionProcessor {
         triggerData,
         job.attemptsMade + 1,
         job.id?.toString(),
+        triggerSource ?? 'manual',
       );
       this.logger.log(`[Job ${job.id}] Workflow execution completed`);
     } catch (error: any) {

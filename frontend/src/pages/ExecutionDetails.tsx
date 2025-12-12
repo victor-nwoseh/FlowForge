@@ -167,7 +167,7 @@ const ExecutionDetails = () => {
         <div>
           <p className="text-xs uppercase text-gray-500">Triggered by</p>
           <p className="mt-1 font-semibold text-gray-900 capitalize">
-            {execution.triggerData?.source ?? 'manual'}
+            {execution.triggerSource ?? execution.triggerData?.source ?? 'manual'}
           </p>
         </div>
       </div>

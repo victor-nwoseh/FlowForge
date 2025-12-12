@@ -64,7 +64,7 @@ export class OAuthController {
 
     const slackAuthUrl = new URL('https://slack.com/oauth/v2/authorize');
     slackAuthUrl.searchParams.set('client_id', this.slackClientId);
-    slackAuthUrl.searchParams.set('scope', 'chat:write,channels:read');
+    slackAuthUrl.searchParams.set('scope', 'chat:write,channels:read,channels:join');
     slackAuthUrl.searchParams.set('redirect_uri', this.slackRedirectUri);
     slackAuthUrl.searchParams.set('state', userId);
 

@@ -19,6 +19,9 @@ export class Execution {
   @Prop({ type: Object, default: {} })
   triggerData!: Record<string, any>;
 
+  @Prop({ type: String, default: 'manual' })
+  triggerSource!: string;
+
   @Prop({ type: Array, default: [] })
   logs!: any[];
 

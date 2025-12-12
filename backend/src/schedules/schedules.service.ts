@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { InjectQueue } from '@nestjs/bull';
 import { Model } from 'mongoose';
 import { Queue } from 'bull';
+import * as cronParser from 'cron-parser';
 
 import { Schedule, ScheduleDocument } from './schemas/schedule.schema';
 
@@ -20,6 +21,34 @@ export class SchedulesService {
     }
   }
 
+  private computeNextRun(cronExpression: string, fromDate?: Date): Date | null {
+    try {
+      const interval = cronParser.parseExpression(cronExpression, {
+        currentDate: fromDate ?? new Date(),
+      });
+      return interval.next().toDate();
+    } catch (err) {
+      return null;
+    }
+  }
+
+  private async hydrateScheduleTimes(schedule: ScheduleDocument): Promise<ScheduleDocument> {
+    // Ensure nextRunAt is present for active schedules; compute from lastRunAt or now.
+    if (schedule.isActive) {
+      const basisDate = schedule.lastRunAt ?? new Date();
+      const next = this.computeNextRun(schedule.cronExpression, basisDate);
+      if (next) {
+        const needsSave =
+          !schedule.nextRunAt || schedule.nextRunAt.getTime() !== next.getTime();
+        schedule.nextRunAt = next;
+        if (needsSave) {
+          await schedule.save();
+        }
+      }
+    }
+    return schedule;
+  }
+
   async create(userId: string, workflowId: string, cronExpression: string): Promise<Schedule> {
     this.validateCronExpression(cronExpression);
 
@@ -34,6 +63,7 @@ export class SchedulesService {
     );
 
     const repeatableJobId = job.opts.repeat?.key;
+    const nextRunAt = this.computeNextRun(cronExpression) || undefined;
 
     const schedule = await this.scheduleModel.create({
       workflowId,
@@ -41,17 +71,20 @@ export class SchedulesService {
       cronExpression,
       isActive: true,
       repeatableJobId,
+      nextRunAt,
     });
 
     return schedule;
   }
 
   async findAllByUser(userId: string): Promise<Schedule[]> {
-    return this.scheduleModel
+    const schedules = await this.scheduleModel
       .find({ userId })
       .populate('workflowId', 'name')
       .sort({ createdAt: -1 })
       .exec();
+
+    return Promise.all(schedules.map((s) => this.hydrateScheduleTimes(s)));
   }
 
   async findOne(scheduleId: string, userId: string): Promise<Schedule> {
@@ -64,7 +97,7 @@ export class SchedulesService {
       throw new NotFoundException('Schedule not found');
     }
 
-    return schedule;
+    return this.hydrateScheduleTimes(schedule);
   }
 
   async delete(scheduleId: string, userId: string): Promise<void> {
@@ -97,6 +130,7 @@ export class SchedulesService {
         { repeat: { cron: schedule.cronExpression }, jobId: `schedule_${schedule.workflowId}` },
       );
       schedule.repeatableJobId = job.opts.repeat?.key;
+      schedule.nextRunAt = this.computeNextRun(schedule.cronExpression) || undefined;
     }
 
     schedule.isActive = isActive;
@@ -107,10 +141,13 @@ export class SchedulesService {
   }
 
   async updateLastRun(workflowId: string): Promise<void> {
-    await this.scheduleModel.updateOne(
-      { workflowId },
-      { $set: { lastRunAt: new Date() } },
-    );
+    const schedules = await this.scheduleModel.find({ workflowId }).exec();
+    for (const sched of schedules) {
+      sched.lastRunAt = new Date();
+      const next = this.computeNextRun(sched.cronExpression, sched.lastRunAt);
+      sched.nextRunAt = next || undefined;
+      await sched.save();
+    }
   }
 }
 

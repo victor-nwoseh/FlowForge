@@ -19,6 +19,7 @@ import { NodeHandlerRegistryService } from './services/node-handler-registry.ser
 import { WorkflowExecutorService } from './services/workflow-executor.service';
 import { WorkflowExecutionProcessor } from './processors/workflow-execution.processor';
 import { ConnectionsModule } from '../connections/connections.module';
+import { SchedulesModule } from '../schedules/schedules.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ConnectionsModule } from '../connections/connections.module';
     }),
     ExecutionsModule,
     ConnectionsModule,
+    SchedulesModule,
   ],
   controllers: [WorkflowsController, WebhookController],
   providers: [

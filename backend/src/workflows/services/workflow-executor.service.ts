@@ -9,6 +9,7 @@ import {
 } from '../../executions/interfaces/execution.interface';
 import { topologicalSort } from '../utils/topological-sort.util';
 import { replaceVariablesInObject } from '../utils/variable-replacement.util';
+import { SchedulesService } from '../../schedules/schedules.service';
 
 const SENSITIVE_KEYS = [
   'password',
@@ -29,6 +30,7 @@ export class WorkflowExecutorService {
     private readonly workflowsService: WorkflowsService,
     private readonly executionsService: ExecutionsService,
     private readonly nodeHandlerRegistry: NodeHandlerRegistryService,
+    private readonly schedulesService: SchedulesService,
   ) {}
 
   async executeWorkflow(
@@ -37,11 +39,13 @@ export class WorkflowExecutorService {
     triggerData: any = {},
     attemptNumber = 1,
     jobId?: string,
+    triggerSource: 'manual' | 'webhook' | 'scheduled' = 'manual',
   ): Promise<string> {
     const execution = await this.executionsService.create(
       workflowId,
       userId,
       triggerData,
+      triggerSource,
     );
 
     this.logger.log(`Workflow execution created: ${execution._id}`);
@@ -53,6 +57,7 @@ export class WorkflowExecutorService {
       triggerData,
       attemptNumber,
       jobId,
+      triggerSource,
     );
 
     return execution._id.toString();
@@ -65,6 +70,7 @@ export class WorkflowExecutorService {
     triggerData: any,
     attemptNumber: number,
     jobId?: string,
+    triggerSource: 'manual' | 'webhook' | 'scheduled' = 'manual',
   ): Promise<void> {
     let currentNodeId: string | null = null;
     let currentNodeType: string | null = null;
@@ -98,6 +104,39 @@ export class WorkflowExecutorService {
         workflow.edges ?? [],
       );
 
+      const triggerNodeIds = (workflow.nodes ?? [])
+        .filter((n) => n?.data?.type === 'trigger')
+        .map((n) => n.id);
+
+      const reachable = new Set<string>();
+      if (triggerNodeIds.length > 0) {
+        // Build adjacency map
+        const adjacency = new Map<string, string[]>();
+        for (const edge of workflow.edges ?? []) {
+          if (edge?.source && edge?.target) {
+            const arr = adjacency.get(edge.source) ?? [];
+            arr.push(edge.target);
+            adjacency.set(edge.source, arr);
+          }
+        }
+        // DFS/BFS from triggers
+        const stack = [...triggerNodeIds];
+        while (stack.length) {
+          const current = stack.pop() as string;
+          if (reachable.has(current)) continue;
+          reachable.add(current);
+          const next = adjacency.get(current) ?? [];
+          for (const tgt of next) {
+            if (!reachable.has(tgt)) stack.push(tgt);
+          }
+        }
+      } else {
+        // No trigger nodes; consider all nodes reachable
+        for (const n of workflow.nodes ?? []) {
+          reachable.add(n.id);
+        }
+      }
+
       if (sortedNodeIds.length === 0) {
         throw new Error('No executable nodes found in workflow');
       }
@@ -118,6 +157,12 @@ export class WorkflowExecutorService {
 
       for (const nodeId of sortedNodeIds) {
         currentNodeId = nodeId;
+
+        if (!reachable.has(nodeId)) {
+          this.logger.debug(`Skipping unreachable node ${nodeId} for execution ${executionId}`);
+          continue;
+        }
+
         const node = workflow.nodes.find((n) => n.id === nodeId);
 
         if (!node) {
@@ -129,6 +174,13 @@ export class WorkflowExecutorService {
 
         if (!nodeType) {
           throw new Error(`Node type missing for node ${nodeId}`);
+        }
+
+        // Skip trigger nodes — they are entry points only
+        if (nodeType === 'trigger') {
+          successfulNodes.push(nodeId);
+          context[nodeId] = { trigger: true };
+          continue;
         }
 
         const handler = this.nodeHandlerRegistry.getHandler(nodeType);
@@ -254,6 +306,15 @@ export class WorkflowExecutorService {
       }
 
       await this.executionsService.updateStatus(executionId, 'success');
+      if (triggerSource === 'scheduled') {
+        try {
+          await this.schedulesService.updateLastRun(workflowId);
+        } catch (schedErr) {
+          this.logger.error(
+            `Failed to update schedule lastRunAt for workflow ${workflowId}: ${(schedErr as Error).message}`,
+          );
+        }
+      }
       this.logger.log(
         `Workflow execution ${executionId} for workflow ${workflowId} completed successfully`,
       );

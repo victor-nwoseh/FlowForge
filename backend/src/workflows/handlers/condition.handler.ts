@@ -21,7 +21,7 @@ export class ConditionHandler implements INodeHandler {
     if (!expression || typeof expression !== 'string' || !expression.trim()) {
       return {
         success: false,
-        output: { condition: false },
+        output: { branch: 'false' },
         error: 'Expression is required for condition node',
       };
     }
@@ -33,12 +33,12 @@ export class ConditionHandler implements INodeHandler {
 
       return {
         success: true,
-        output: { condition: result },
+        output: { branch: result ? 'true' : 'false' },
       };
     } catch {
       return {
         success: false,
-        output: { condition: false },
+        output: { branch: 'false' },
         error: 'Invalid expression',
       };
     }

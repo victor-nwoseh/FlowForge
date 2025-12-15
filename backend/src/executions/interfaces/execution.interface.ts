@@ -4,6 +4,7 @@ export interface NodeExecutionLog {
   status: 'success' | 'failed' | 'skipped';
   input: any;
   output: any;
+  branchTaken?: 'true' | 'false';
   error?: string;
   attemptNumber?: number;
   startTime: Date;

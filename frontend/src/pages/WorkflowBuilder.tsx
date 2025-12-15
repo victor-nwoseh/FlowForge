@@ -5,6 +5,7 @@ import ReactFlow, {
   Controls,
   Edge,
   EdgeChange,
+  MarkerType,
   MiniMap,
   Node,
   NodeChange,
@@ -151,6 +152,35 @@ const WorkflowBuilder = () => {
     setFitViewRequest((value) => value + 1);
   }, []);
 
+  const getBranchColor = useCallback((handle?: string | null) => {
+    if (handle === 'true') {
+      return '#22c55e';
+    }
+    if (handle === 'false') {
+      return '#ef4444';
+    }
+    return '#94a3b8';
+  }, []);
+
+  const decorateEdge = useCallback(
+    (edge: WorkflowEdge): WorkflowEdge => {
+      const color = getBranchColor(edge.sourceHandle);
+      return {
+        ...edge,
+        style: {
+          ...(edge.style ?? {}),
+          stroke: color,
+          strokeWidth: 2,
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color,
+        },
+      };
+    },
+    [getBranchColor],
+  );
+
   useEffect(() => {
     return () => {
       if (fitViewTimeoutRef.current !== null) {
@@ -190,7 +220,7 @@ const WorkflowBuilder = () => {
             type: 'custom',
           })),
         );
-        setEdges(workflow.edges ?? []);
+        setEdges((workflow.edges ?? []).map((edge) => decorateEdge(edge)));
         setCurrentWorkflow(workflow);
         setSelectedNode(null);
       } catch (error) {
@@ -211,6 +241,7 @@ const WorkflowBuilder = () => {
     setCurrentWorkflow,
     setSelectedNode,
     scheduleFitView,
+    decorateEdge,
   ]);
 
   useEffect(() => {
@@ -311,19 +342,27 @@ const WorkflowBuilder = () => {
         return;
       }
 
-      const newEdge: WorkflowEdge = {
+      const newEdge: WorkflowEdge = decorateEdge({
         id: generateEdgeId(connection.source, connection.target),
         source: connection.source,
         target: connection.target,
+        sourceHandle:
+          'sourceHandle' in connection && connection.sourceHandle
+            ? connection.sourceHandle
+            : undefined,
+        targetHandle:
+          'targetHandle' in connection && connection.targetHandle
+            ? connection.targetHandle
+            : undefined,
         type:
           'type' in connection && typeof connection.type === 'string'
             ? connection.type
             : undefined,
-      };
+      });
 
       addEdgeToStore(newEdge);
     },
-    [addEdgeToStore],
+    [addEdgeToStore, decorateEdge],
   );
 
   const isValidConnection = useCallback(
@@ -458,12 +497,16 @@ const WorkflowBuilder = () => {
           position,
           data,
         })),
-        edges: edges.map(({ id, source, target, type }) => ({
+        edges: edges.map(
+          ({ id, source, target, type, sourceHandle, targetHandle }) => ({
           id,
           source,
           target,
           type,
-        })),
+            sourceHandle,
+            targetHandle,
+          }),
+        ),
       };
 
       if (workflowId) {

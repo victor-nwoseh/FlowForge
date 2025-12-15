@@ -1,4 +1,9 @@
-export function topologicalSort(nodes: any[], edges: any[]): string[] {
+export function topologicalSort(
+  nodes: any[],
+  edges: any[],
+  edgeFilter?: (edge: any) => boolean,
+): string[] {
+  const filteredEdges = edgeFilter ? edges.filter(edgeFilter) : edges;
   const inDegree = new Map<string, number>();
   const adjacency = new Map<string, string[]>();
 
@@ -7,7 +12,7 @@ export function topologicalSort(nodes: any[], edges: any[]): string[] {
     adjacency.set(node.id, []);
   }
 
-  for (const edge of edges) {
+  for (const edge of filteredEdges) {
     const source = edge.source;
     const target = edge.target;
 
@@ -54,10 +59,15 @@ export function topologicalSort(nodes: any[], edges: any[]): string[] {
   return result;
 }
 
-export function findStartNodes(nodes: any[], edges: any[]): string[] {
+export function findStartNodes(
+  nodes: any[],
+  edges: any[],
+  edgeFilter?: (edge: any) => boolean,
+): string[] {
+  const filteredEdges = edgeFilter ? edges.filter(edgeFilter) : edges;
   const incoming = new Set<string>();
 
-  for (const edge of edges) {
+  for (const edge of filteredEdges) {
     if (edge.target) {
       incoming.add(edge.target);
     }

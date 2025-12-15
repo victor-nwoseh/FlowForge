@@ -99,43 +99,66 @@ export class WorkflowExecutorService {
         `Workflow ${workflowId} has ${workflow.nodes.length} nodes for execution ${executionId}`,
       );
 
-      const sortedNodeIds = topologicalSort(
+      const branchSelections = new Map<string, 'true' | 'false'>();
+
+      const edgeFilter = (edge: any) => {
+        if (!edge?.source || !edge?.target) {
+          return false;
+        }
+
+        const selectedBranch = branchSelections.get(edge.source);
+        if (selectedBranch) {
+          return edge.sourceHandle === selectedBranch;
+        }
+
+        return true;
+      };
+
+      const getFilteredEdges = () => (workflow.edges ?? []).filter(edgeFilter);
+
+      const computeReachable = (): Set<string> => {
+        const filteredEdges = getFilteredEdges();
+        const reachableSet = new Set<string>();
+        const triggerNodeIds = (workflow.nodes ?? [])
+          .filter((n) => n?.data?.type === 'trigger')
+          .map((n) => n.id);
+
+        if (triggerNodeIds.length > 0) {
+          const adjacency = new Map<string, string[]>();
+          for (const edge of filteredEdges) {
+            if (edge?.source && edge?.target) {
+              const arr = adjacency.get(edge.source) ?? [];
+              arr.push(edge.target);
+              adjacency.set(edge.source, arr);
+            }
+          }
+
+          const stack = [...triggerNodeIds];
+          while (stack.length) {
+            const current = stack.pop() as string;
+            if (reachableSet.has(current)) continue;
+            reachableSet.add(current);
+            const next = adjacency.get(current) ?? [];
+            for (const tgt of next) {
+              if (!reachableSet.has(tgt)) stack.push(tgt);
+            }
+          }
+        } else {
+          for (const n of workflow.nodes ?? []) {
+            reachableSet.add(n.id);
+          }
+        }
+
+        return reachableSet;
+      };
+
+      let sortedNodeIds = topologicalSort(
         workflow.nodes,
         workflow.edges ?? [],
+        edgeFilter,
       );
 
-      const triggerNodeIds = (workflow.nodes ?? [])
-        .filter((n) => n?.data?.type === 'trigger')
-        .map((n) => n.id);
-
-      const reachable = new Set<string>();
-      if (triggerNodeIds.length > 0) {
-        // Build adjacency map
-        const adjacency = new Map<string, string[]>();
-        for (const edge of workflow.edges ?? []) {
-          if (edge?.source && edge?.target) {
-            const arr = adjacency.get(edge.source) ?? [];
-            arr.push(edge.target);
-            adjacency.set(edge.source, arr);
-          }
-        }
-        // DFS/BFS from triggers
-        const stack = [...triggerNodeIds];
-        while (stack.length) {
-          const current = stack.pop() as string;
-          if (reachable.has(current)) continue;
-          reachable.add(current);
-          const next = adjacency.get(current) ?? [];
-          for (const tgt of next) {
-            if (!reachable.has(tgt)) stack.push(tgt);
-          }
-        }
-      } else {
-        // No trigger nodes; consider all nodes reachable
-        for (const n of workflow.nodes ?? []) {
-          reachable.add(n.id);
-        }
-      }
+      let reachable = computeReachable();
 
       if (sortedNodeIds.length === 0) {
         throw new Error('No executable nodes found in workflow');
@@ -155,7 +178,17 @@ export class WorkflowExecutorService {
       context._userId = userId;
       context._executionId = executionId;
 
-      for (const nodeId of sortedNodeIds) {
+      const processedNodes = new Set<string>();
+
+      let index = 0;
+      while (index < sortedNodeIds.length) {
+        const nodeId = sortedNodeIds[index];
+        index += 1;
+
+        if (processedNodes.has(nodeId)) {
+          continue;
+        }
+
         currentNodeId = nodeId;
 
         if (!reachable.has(nodeId)) {
@@ -205,6 +238,7 @@ export class WorkflowExecutorService {
           `Node execution attempt ${attemptNumber}: ${nodeId} (type: ${nodeType}) for execution ${executionId}`,
         );
 
+        let branchTaken: 'true' | 'false' | undefined;
         const startTime = new Date();
         const result = await handler.execute(processedNodeData, context);
         const endTime = new Date();
@@ -271,13 +305,51 @@ export class WorkflowExecutorService {
               );
             }
 
+            processedNodes.add(nodeId);
+
             continue;
           }
 
           throw failureError;
         }
 
+        if (nodeType === 'condition') {
+          branchTaken = result.output?.branch as 'true' | 'false' | undefined;
+          if (branchTaken) {
+            this.logger.log(
+              `Branch taken: ${branchTaken} for node ${nodeId}`,
+            );
+            branchSelections.set(nodeId, branchTaken);
+
+            const branchEdges =
+              workflow.edges?.filter(
+                (edge) =>
+                  edge?.source === nodeId &&
+                  edge.sourceHandle === branchTaken,
+              ) ?? [];
+
+            if (branchEdges.length === 0) {
+              this.logger.warn(
+                `Condition node ${nodeId} has no outgoing edges on branch ${branchTaken}`,
+              );
+            }
+
+            reachable = computeReachable();
+            sortedNodeIds = topologicalSort(
+              workflow.nodes,
+              workflow.edges ?? [],
+              edgeFilter,
+            );
+            index = 0;
+          } else {
+            this.logger.warn(
+              `Condition node ${nodeId} did not produce a branch value; downstream routing may be skipped`,
+            );
+          }
+        }
+
         context[nodeId] = result.output;
+        processedNodes.add(nodeId);
         successfulNodes.push(nodeId);
 
         const log: NodeExecutionLog = {
@@ -286,6 +358,7 @@ export class WorkflowExecutorService {
           status: 'success',
           input: processedNodeData,
           output: result.output,
+          branchTaken: nodeType === 'condition' ? branchTaken : undefined,
           startTime,
           endTime,
           duration,

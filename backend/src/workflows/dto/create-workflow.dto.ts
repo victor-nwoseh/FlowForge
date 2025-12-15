@@ -34,6 +34,14 @@ export class EdgeDto {
   @IsOptional()
   @IsString()
   type?: string;
+
+  @IsOptional()
+  @IsString()
+  sourceHandle?: string;
+
+  @IsOptional()
+  @IsString()
+  targetHandle?: string;
 }
 
 export class CreateWorkflowDto {

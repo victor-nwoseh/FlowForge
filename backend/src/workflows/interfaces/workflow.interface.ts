@@ -19,5 +19,7 @@ export interface Edge {
   source: string;
   target: string;
   type?: string;
+  sourceHandle?: string;
+  targetHandle?: string;
 }
 

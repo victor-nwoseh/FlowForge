@@ -64,8 +64,27 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
   useEffect(() => {
     if (selectedNode) {
       setLabel(selectedNode.data.label || '');
-      setConfig(selectedNode.data.config || {});
       const nodeConfig = selectedNode.data.config || {};
+      // Normalize if/else configs so builder fields are prefilled
+      if (selectedNode.data.type === 'ifElse') {
+        const condition = typeof nodeConfig.condition === 'string' ? nodeConfig.condition : '';
+        const operator = typeof nodeConfig.operator === 'string' ? nodeConfig.operator : '==';
+        const value = nodeConfig.value ?? '';
+        // Attempt to parse expression if fields missing
+        if (!condition && !nodeConfig.condition && typeof nodeConfig.expression === 'string') {
+          const parts = nodeConfig.expression.split(' ');
+          if (parts.length >= 3) {
+            nodeConfig.condition = parts[0];
+            nodeConfig.operator = parts[1];
+            nodeConfig.value = parts.slice(2).join(' ');
+          }
+        } else {
+          nodeConfig.condition = condition;
+          nodeConfig.operator = operator;
+          nodeConfig.value = value;
+        }
+      }
+      setConfig(nodeConfig);
       const scheduled = nodeConfig.scheduled === true;
       setTriggerType(scheduled ? 'scheduled' : 'manual');
       setCronExpression(nodeConfig.cronExpression || '');
@@ -92,6 +111,16 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
         finalConfig.scheduled = false;
         delete finalConfig.cronExpression;
       }
+    }
+
+    if (selectedNode.data.type === 'ifElse') {
+      const left = (finalConfig.condition ?? '').toString().trim();
+      const op = (finalConfig.operator ?? '==').toString().trim() || '==';
+      const right =
+        finalConfig.value === undefined || finalConfig.value === null
+          ? ''
+          : finalConfig.value.toString();
+      finalConfig.expression = `${left} ${op} ${right}`.trim();
     }
 
     const updatedData = {
@@ -456,6 +485,74 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
                 handleConfigChange('expression', event.target.value)
               }
             />
+          </div>
+        );
+      case 'variable':
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Key</label>
+              <Input
+                placeholder="count"
+                value={config.key || ''}
+                onChange={(event) => handleConfigChange('key', event.target.value)}
+              />
+              <p className="text-xs text-gray-500">
+                Reference this value in other nodes with {'{{variable.key}}'}.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Value</label>
+              <Input
+                placeholder="15"
+                value={config.value ?? ''}
+                onChange={(event) => handleConfigChange('value', event.target.value)}
+              />
+              <p className="text-xs text-gray-500">
+                Strings, numbers, booleans, or JSON are supported; stored as provided.
+              </p>
+            </div>
+          </div>
+        );
+      case 'ifElse':
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Left side</label>
+              <Input
+                placeholder="{{variable.count}}"
+                value={config.condition || ''}
+                onChange={(event) => handleConfigChange('condition', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Operator</label>
+              <select
+                value={config.operator || '=='}
+                onChange={(event) => handleConfigChange('operator', event.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              >
+                {['==', '!=', '>', '<', '>=', '<=', 'contains'].map((op) => (
+                  <option key={op} value={op}>
+                    {op}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Right side</label>
+              <Input
+                placeholder="10"
+                value={config.value ?? ''}
+                onChange={(event) => handleConfigChange('value', event.target.value)}
+              />
+            </div>
+            <div className="rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-700">
+              Preview:{' '}
+              {`${config.condition || '{{variable.count}}'} ${config.operator || '=='} ${
+                config.value ?? ''
+              }`}
+            </div>
           </div>
         );
       case 'delay':

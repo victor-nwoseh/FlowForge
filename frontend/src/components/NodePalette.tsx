@@ -12,13 +12,23 @@ import {
   Zap,
 } from 'lucide-react';
 
-const NODE_TYPES = [
+type PaletteNode = {
+  type: string;
+  label: string;
+  icon: React.ComponentType<{ size?: number | string }>;
+  color: string;
+  category: 'trigger' | 'action' | 'logic';
+  description?: string;
+};
+
+const NODE_TYPES: PaletteNode[] = [
   {
     type: 'trigger',
     label: 'Trigger',
     icon: Play,
     color: 'from-blue-500 to-blue-600',
     category: 'trigger',
+    description: 'Starts the workflow when conditions are met.',
   },
   {
     type: 'action',
@@ -26,6 +36,7 @@ const NODE_TYPES = [
     icon: Zap,
     color: 'from-emerald-500 to-emerald-600',
     category: 'action',
+    description: 'Performs a task or operation.',
   },
   {
     type: 'condition',
@@ -33,6 +44,15 @@ const NODE_TYPES = [
     icon: GitBranch,
     color: 'from-amber-500 to-amber-600',
     category: 'logic',
+    description: 'Branch logic based on conditions.',
+  },
+  {
+    type: 'ifElse',
+    label: 'If/Else',
+    icon: GitBranch,
+    color: 'from-emerald-500 to-emerald-600',
+    category: 'logic',
+    description: 'Execute different actions based on condition',
   },
   {
     type: 'delay',
@@ -40,6 +60,7 @@ const NODE_TYPES = [
     icon: Clock,
     color: 'from-purple-500 to-purple-600',
     category: 'logic',
+    description: 'Pause execution for a specified time.',
   },
   {
     type: 'variable',
@@ -47,6 +68,7 @@ const NODE_TYPES = [
     icon: Database,
     color: 'from-cyan-500 to-cyan-600',
     category: 'logic',
+    description: 'Store or transform data within the workflow.',
   },
   {
     type: 'slack',
@@ -54,6 +76,7 @@ const NODE_TYPES = [
     icon: MessageSquare,
     color: 'from-blue-400 to-blue-500',
     category: 'action',
+    description: 'Send messages to Slack channels.',
   },
   {
     type: 'email',
@@ -61,6 +84,7 @@ const NODE_TYPES = [
     icon: Mail,
     color: 'from-pink-500 to-pink-600',
     category: 'action',
+    description: 'Send email notifications.',
   },
   {
     type: 'http',
@@ -68,6 +92,7 @@ const NODE_TYPES = [
     icon: Globe,
     color: 'from-indigo-500 to-indigo-600',
     category: 'action',
+    description: 'Make HTTP requests to external services.',
   },
   {
     type: 'sheets',
@@ -75,6 +100,7 @@ const NODE_TYPES = [
     icon: FileSpreadsheet,
     color: 'from-green-500 to-green-600',
     category: 'action',
+    description: 'Read or write data to Google Sheets.',
   },
   {
     type: 'webhook',
@@ -82,6 +108,7 @@ const NODE_TYPES = [
     icon: Webhook,
     color: 'from-orange-500 to-orange-600',
     category: 'trigger',
+    description: 'Handle incoming webhook requests.',
   },
 ] as const;
 
@@ -144,7 +171,7 @@ const NodePalette = () => {
       </div>
       <div className="flex-1 overflow-y-auto p-4">
         <div className="grid gap-3">
-          {filteredNodeTypes.map(({ type, label, icon: Icon, color }) => (
+          {filteredNodeTypes.map(({ type, label, icon: Icon, color, description }) => (
             <div
               key={type}
               draggable
@@ -156,7 +183,9 @@ const NodePalette = () => {
               </div>
               <div>
                 <p className="text-sm font-semibold text-white">{label}</p>
-                <p className="text-xs text-white/80 uppercase">{type}</p>
+                <p className="text-xs text-white/80">
+                  {description ? description : type}
+                </p>
               </div>
             </div>
           ))}

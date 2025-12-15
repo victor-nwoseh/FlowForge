@@ -119,33 +119,50 @@ export class WorkflowExecutorService {
       const computeReachable = (): Set<string> => {
         const filteredEdges = getFilteredEdges();
         const reachableSet = new Set<string>();
+
         const triggerNodeIds = (workflow.nodes ?? [])
           .filter((n) => n?.data?.type === 'trigger')
           .map((n) => n.id);
 
-        if (triggerNodeIds.length > 0) {
-          const adjacency = new Map<string, string[]>();
-          for (const edge of filteredEdges) {
-            if (edge?.source && edge?.target) {
-              const arr = adjacency.get(edge.source) ?? [];
-              arr.push(edge.target);
-              adjacency.set(edge.source, arr);
-            }
+        // Build adjacency from filtered edges (respecting branch selection)
+        const adjacency = new Map<string, string[]>();
+        for (const edge of filteredEdges) {
+          if (edge?.source && edge?.target) {
+            const arr = adjacency.get(edge.source) ?? [];
+            arr.push(edge.target);
+            adjacency.set(edge.source, arr);
           }
+        }
 
-          const stack = [...triggerNodeIds];
-          while (stack.length) {
-            const current = stack.pop() as string;
-            if (reachableSet.has(current)) continue;
-            reachableSet.add(current);
-            const next = adjacency.get(current) ?? [];
-            for (const tgt of next) {
-              if (!reachableSet.has(tgt)) stack.push(tgt);
-            }
+        // Determine start nodes from the original (unfiltered) graph to avoid
+        // promoting disconnected branch targets when a branch is filtered out.
+        const incomingAll = new Set<string>();
+        for (const edge of workflow.edges ?? []) {
+          if (edge?.target) {
+            incomingAll.add(edge.target);
           }
+        }
+
+        let startNodes: string[] = [];
+        if (triggerNodeIds.length > 0) {
+          startNodes = triggerNodeIds;
         } else {
-          for (const n of workflow.nodes ?? []) {
-            reachableSet.add(n.id);
+          startNodes = (workflow.nodes ?? [])
+            .map((n) => n.id)
+            .filter((id) => !incomingAll.has(id));
+          if (startNodes.length === 0) {
+            startNodes = (workflow.nodes ?? []).map((n) => n.id);
+          }
+        }
+
+        const stack = [...startNodes];
+        while (stack.length) {
+          const current = stack.pop() as string;
+          if (reachableSet.has(current)) continue;
+          reachableSet.add(current);
+          const next = adjacency.get(current) ?? [];
+          for (const tgt of next) {
+            if (!reachableSet.has(tgt)) stack.push(tgt);
           }
         }
 

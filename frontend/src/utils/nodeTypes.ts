@@ -1,3 +1,4 @@
+import type React from 'react';
 import {
   Clock,
   Database,
@@ -51,6 +52,18 @@ export const NODE_TYPE_CONFIGS: Record<string, NodeTypeConfig> = {
     icon: GitBranch,
     defaultConfig: {
       expression: '',
+    },
+    color: 'amber',
+    category: 'logic',
+  },
+  ifElse: {
+    name: 'If/Else',
+    description: 'Execute different actions based on condition',
+    icon: GitBranch,
+    defaultConfig: {
+      condition: '',
+      operator: '==',
+      value: '',
     },
     color: 'amber',
     category: 'logic',

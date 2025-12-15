@@ -27,6 +27,7 @@ export class NodeHandlerRegistryService {
     this.handlers.set('http', httpRequestHandler);
     this.handlers.set('delay', delayHandler);
     this.handlers.set('condition', conditionHandler);
+    this.handlers.set('ifElse', conditionHandler);
     this.handlers.set('variable', variableHandler);
     this.handlers.set('slack', slackHandler);
     this.handlers.set('email', emailHandler);

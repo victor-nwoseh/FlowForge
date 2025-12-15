@@ -153,32 +153,61 @@ const WorkflowBuilder = () => {
   }, []);
 
   const getBranchColor = useCallback((handle?: string | null) => {
-    if (handle === 'true') {
-      return '#22c55e';
-    }
-    if (handle === 'false') {
-      return '#ef4444';
-    }
+    if (handle === 'true') return '#10b981';
+    if (handle === 'false') return '#ef4444';
     return '#94a3b8';
   }, []);
 
-  const decorateEdge = useCallback(
-    (edge: WorkflowEdge): WorkflowEdge => {
+  const getEdgeStyle = useCallback(
+    (edge: WorkflowEdge) => {
+      if (edge.sourceHandle === 'true') {
+        return { stroke: '#10b981', strokeWidth: 2 };
+      }
+      if (edge.sourceHandle === 'false') {
+        return { stroke: '#ef4444', strokeWidth: 2 };
+      }
+      return { stroke: '#94a3b8', strokeWidth: 2 };
+    },
+    [],
+  );
+
+  const decorateEdgeWithNodes = useCallback(
+    (edge: WorkflowEdge, nodesList: WorkflowNode[]): WorkflowEdge => {
       const color = getBranchColor(edge.sourceHandle);
+      const sourceNode = nodesList.find((n) => n.id === edge.source);
+      const isConditionSource = sourceNode?.data?.type === 'condition';
+
+      const baseStyle = getEdgeStyle(edge);
+
+      let label: string | undefined;
+      if (isConditionSource) {
+        if (edge.sourceHandle === 'true') {
+          label = '✓ True';
+        } else if (edge.sourceHandle === 'false') {
+          label = '✗ False';
+        }
+      }
+
       return {
         ...edge,
         style: {
           ...(edge.style ?? {}),
-          stroke: color,
-          strokeWidth: 2,
+          ...baseStyle,
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
           color,
         },
+        label,
+        labelStyle: label
+          ? {
+              fill: color,
+              fontWeight: 600,
+            }
+          : edge.labelStyle,
       };
     },
-    [getBranchColor],
+    [getBranchColor, getEdgeStyle],
   );
 
   useEffect(() => {
@@ -214,13 +243,17 @@ const WorkflowBuilder = () => {
         const workflow = await workflowService.getOne(workflowId);
         setName(workflow.name);
         setDescription(workflow.description ?? '');
-        setNodes(
-          (workflow.nodes ?? []).map((node) => ({
-            ...node,
-            type: 'custom',
-          })),
+        const workflowNodes = (workflow.nodes ?? []).map((node) => ({
+          ...node,
+          type: 'custom',
+        }));
+
+        setNodes(workflowNodes);
+        setEdges(
+          (workflow.edges ?? []).map((edge) =>
+            decorateEdgeWithNodes(edge, workflowNodes),
+          ),
         );
-        setEdges((workflow.edges ?? []).map((edge) => decorateEdge(edge)));
         setCurrentWorkflow(workflow);
         setSelectedNode(null);
       } catch (error) {
@@ -241,7 +274,7 @@ const WorkflowBuilder = () => {
     setCurrentWorkflow,
     setSelectedNode,
     scheduleFitView,
-    decorateEdge,
+    decorateEdgeWithNodes,
   ]);
 
   useEffect(() => {
@@ -342,27 +375,30 @@ const WorkflowBuilder = () => {
         return;
       }
 
-      const newEdge: WorkflowEdge = decorateEdge({
-        id: generateEdgeId(connection.source, connection.target),
-        source: connection.source,
-        target: connection.target,
-        sourceHandle:
-          'sourceHandle' in connection && connection.sourceHandle
-            ? connection.sourceHandle
-            : undefined,
-        targetHandle:
-          'targetHandle' in connection && connection.targetHandle
-            ? connection.targetHandle
-            : undefined,
-        type:
-          'type' in connection && typeof connection.type === 'string'
-            ? connection.type
-            : undefined,
-      });
+      const newEdge: WorkflowEdge = decorateEdgeWithNodes(
+        {
+          id: generateEdgeId(connection.source, connection.target),
+          source: connection.source,
+          target: connection.target,
+          sourceHandle:
+            'sourceHandle' in connection && connection.sourceHandle
+              ? connection.sourceHandle
+              : undefined,
+          targetHandle:
+            'targetHandle' in connection && connection.targetHandle
+              ? connection.targetHandle
+              : undefined,
+          type:
+            'type' in connection && typeof connection.type === 'string'
+              ? connection.type
+              : undefined,
+        },
+        nodes,
+      );
 
       addEdgeToStore(newEdge);
     },
-    [addEdgeToStore, decorateEdge],
+    [addEdgeToStore, decorateEdgeWithNodes, nodes],
   );
 
   const isValidConnection = useCallback(
@@ -487,6 +523,41 @@ const WorkflowBuilder = () => {
       return;
     }
 
+    const conditionNodes = nodes.filter((n) => n.data.type === 'condition');
+    const incomplete = conditionNodes.filter((n) => {
+      const outgoing = edges.filter((e) => e.source === n.id);
+      const hasTrue = outgoing.some((e) => e.sourceHandle === 'true');
+      const hasFalse = outgoing.some((e) => e.sourceHandle === 'false');
+      return !(hasTrue && hasFalse);
+    });
+    if (incomplete.length > 0) {
+      const labels = incomplete
+        .map((n) => n.data.label || n.id)
+        .slice(0, 3)
+        .join(', ');
+      toast(
+        (t) => (
+          <div className="text-sm">
+            <div className="font-semibold text-yellow-800">
+              Missing branch on condition node
+            </div>
+            <div className="text-yellow-700">
+              Add both True and False connections: {labels}
+              {incomplete.length > 3 ? '...' : ''}
+            </div>
+            <button
+              type="button"
+              className="mt-2 text-xs font-semibold text-indigo-600"
+              onClick={() => toast.dismiss(t.id)}
+            >
+              Dismiss
+            </button>
+          </div>
+        ),
+        { duration: 6000, style: { background: '#fefce8', border: '1px solid #facc15' } },
+      );
+    }
+
     try {
       const payload = {
         name,
@@ -499,10 +570,10 @@ const WorkflowBuilder = () => {
         })),
         edges: edges.map(
           ({ id, source, target, type, sourceHandle, targetHandle }) => ({
-          id,
-          source,
-          target,
-          type,
+            id,
+            source,
+            target,
+            type,
             sourceHandle,
             targetHandle,
           }),
@@ -796,7 +867,7 @@ const WorkflowBuilder = () => {
           >
             <ReactFlow
               nodes={nodes}
-              edges={edges}
+              edges={edges.map((edge) => decorateEdgeWithNodes(edge, nodes))}
               nodeTypes={nodeTypes}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}

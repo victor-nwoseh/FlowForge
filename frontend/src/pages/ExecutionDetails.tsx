@@ -7,6 +7,7 @@ import {
   CheckCircle,
   ChevronDown,
   ChevronRight,
+  GitBranch,
   XCircle,
 } from 'lucide-react';
 
@@ -194,14 +195,22 @@ const ExecutionDetails = () => {
           <p className="text-sm text-gray-500">No node logs available.</p>
         ) : (
           <ul className="space-y-4">
-            {execution.logs.map((log: NodeExecutionLog) => {
+            {execution.logs.map((log: NodeExecutionLog, index: number) => {
               const LogIcon =
                 statusIconMap[log.status === 'success' ? 'success' : 'failed'];
               const isSuccess = log.status === 'success';
+              const nextLog = execution.logs[index + 1];
+              const tookBranch = log.nodeType === 'condition' && log.branchTaken;
               return (
                 <li
                   key={`${log.nodeId}-${log.startTime}`}
-                  className="rounded-2xl border border-gray-100 bg-slate-50 p-4"
+                  className={`rounded-2xl border bg-slate-50 p-4 ${
+                    tookBranch
+                      ? log.branchTaken === 'true'
+                        ? 'border-emerald-200'
+                        : 'border-rose-200'
+                      : 'border-gray-100'
+                  }`}
                 >
                   <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                     <div>
@@ -215,6 +224,25 @@ const ExecutionDetails = () => {
                           {log.nodeId} ({log.nodeType})
                         </span>
                       </div>
+                      {log.branchTaken ? (
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <span
+                            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
+                              log.branchTaken === 'true'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-rose-100 text-rose-700'
+                            }`}
+                          >
+                            {log.branchTaken === 'true' ? '✓ True Path' : '✗ False Path'}
+                          </span>
+                          {nextLog ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">
+                              <GitBranch className="h-3 w-3" />
+                              {`Next: ${nextLog.nodeId} (${nextLog.nodeType})`}
+                            </span>
+                          ) : null}
+                        </div>
+                      ) : null}
                       <p className="text-xs uppercase text-gray-500">
                         Attempt {log.attemptNumber ?? 1} • Started{' '}
                         {formatDateTime(log.startTime)}

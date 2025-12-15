@@ -10,6 +10,7 @@ export type NodeType =
   | 'trigger'
   | 'action'
   | 'condition'
+  | 'ifElse'
   | 'delay'
   | 'variable'
   | 'slack'

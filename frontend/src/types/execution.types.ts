@@ -6,6 +6,7 @@ export interface NodeExecutionLog {
   status: 'success' | 'failed' | 'skipped';
   input: any;
   output: any;
+  branchTaken?: 'true' | 'false';
   error?: string;
   startTime: string;
   endTime: string;

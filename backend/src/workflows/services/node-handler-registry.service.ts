@@ -9,6 +9,7 @@ import { SlackHandler } from '../handlers/slack.handler';
 import { EmailHandler } from '../handlers/email.handler';
 import { SheetsHandler } from '../handlers/sheets.handler';
 import { WebhookHandler } from '../handlers/webhook.handler';
+import { LoopHandler } from '../handlers/loop.handler';
 
 @Injectable()
 export class NodeHandlerRegistryService {
@@ -23,6 +24,7 @@ export class NodeHandlerRegistryService {
     emailHandler: EmailHandler,
     sheetsHandler: SheetsHandler,
     webhookHandler: WebhookHandler,
+    loopHandler: LoopHandler,
   ) {
     this.handlers.set('http', httpRequestHandler);
     this.handlers.set('delay', delayHandler);
@@ -33,6 +35,7 @@ export class NodeHandlerRegistryService {
     this.handlers.set('email', emailHandler);
     this.handlers.set('sheets', sheetsHandler);
     this.handlers.set('webhook', webhookHandler);
+    this.handlers.set('loop', loopHandler);
   }
 
   getHandler(nodeType: string): INodeHandler | null {

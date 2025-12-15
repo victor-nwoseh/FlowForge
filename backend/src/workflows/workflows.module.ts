@@ -15,6 +15,7 @@ import { SlackHandler } from './handlers/slack.handler';
 import { EmailHandler } from './handlers/email.handler';
 import { SheetsHandler } from './handlers/sheets.handler';
 import { WebhookHandler } from './handlers/webhook.handler';
+import { LoopHandler } from './handlers/loop.handler';
 import { NodeHandlerRegistryService } from './services/node-handler-registry.service';
 import { WorkflowExecutorService } from './services/workflow-executor.service';
 import { WorkflowExecutionProcessor } from './processors/workflow-execution.processor';
@@ -53,6 +54,7 @@ import { SchedulesModule } from '../schedules/schedules.module';
     EmailHandler,
     SheetsHandler,
     WebhookHandler,
+    LoopHandler,
     NodeHandlerRegistryService,
     WorkflowExecutorService,
     WorkflowExecutionProcessor,

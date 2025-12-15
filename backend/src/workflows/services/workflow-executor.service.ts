@@ -169,6 +169,48 @@ export class WorkflowExecutorService {
         return reachableSet;
       };
 
+      const computeLoopTraversal = (
+        loopNodeId: string,
+      ): { order: string[]; reachable: Set<string> } => {
+        const filteredEdges = getFilteredEdges();
+        const reachableSet = new Set<string>();
+
+        const adjacency = new Map<string, string[]>();
+        for (const edge of filteredEdges) {
+          if (edge?.source && edge?.target) {
+            const arr = adjacency.get(edge.source) ?? [];
+            arr.push(edge.target);
+            adjacency.set(edge.source, arr);
+          }
+        }
+
+        const stack = [loopNodeId];
+        while (stack.length) {
+          const current = stack.pop() as string;
+          if (reachableSet.has(current)) continue;
+          reachableSet.add(current);
+          const next = adjacency.get(current) ?? [];
+          for (const tgt of next) {
+            if (!reachableSet.has(tgt)) stack.push(tgt);
+          }
+        }
+
+        reachableSet.delete(loopNodeId);
+
+        const bodyNodes = (workflow.nodes ?? []).filter((n) =>
+          reachableSet.has(n.id),
+        );
+        const bodyEdges = filteredEdges.filter(
+          (e) => reachableSet.has(e.source) && reachableSet.has(e.target),
+        );
+
+        const order = bodyNodes.length
+          ? topologicalSort(bodyNodes, bodyEdges)
+          : [];
+
+        return { order, reachable: reachableSet };
+      };
+
       let sortedNodeIds = topologicalSort(
         workflow.nodes,
         workflow.edges ?? [],
@@ -362,6 +404,194 @@ export class WorkflowExecutorService {
             this.logger.warn(
               `Condition node ${nodeId} did not produce a branch value; downstream routing may be skipped`,
             );
+          }
+        }
+
+        if (nodeType === 'loop') {
+          const loopState: any = (context as any).loop;
+
+          if (!loopState || !Array.isArray(loopState.items)) {
+            this.logger.warn(
+              `Loop node ${nodeId} did not initialize loop items; skipping loop body`,
+            );
+          } else if (loopState.items.length > 0) {
+            const executedBodyNodes = new Set<string>();
+            const loopItems = loopState.items as any[];
+
+            for (let i = 0; i < loopItems.length; i += 1) {
+              loopState.currentIndex = i;
+              loopState.currentItem = loopItems[i];
+              context.variables[loopState.loopVariable] = loopItems[i];
+              context.variables.loopIndex = i;
+              context.variables.loopCount = loopItems.length;
+              (context as any).loop = loopState;
+
+              const executedThisIteration = new Set<string>();
+              let { order } = computeLoopTraversal(nodeId);
+              let bodyIndex = 0;
+
+              while (bodyIndex < order.length) {
+                const childNodeId = order[bodyIndex];
+                bodyIndex += 1;
+
+                if (executedThisIteration.has(childNodeId)) {
+                  continue;
+                }
+
+                const childNode = workflow.nodes.find((n) => n.id === childNodeId);
+                if (!childNode) {
+                  throw new Error(`Loop body node ${childNodeId} not found`);
+                }
+
+                const childNodeType = childNode?.data?.type;
+                if (!childNodeType) {
+                  throw new Error(`Node type missing for node ${childNodeId}`);
+                }
+
+                const childHandler = this.nodeHandlerRegistry.getHandler(childNodeType);
+                if (!childHandler) {
+                  throw new Error(
+                    `Unsupported node type: ${childNodeType}. Handler not registered`,
+                  );
+                }
+
+                const childProcessedConfig = replaceVariablesInObject(
+                  childNode.data?.config ?? {},
+                  context,
+                );
+
+                const childNodeData = {
+                  ...childNode.data,
+                  config: childProcessedConfig,
+                };
+
+                const childContinueOnError = !!childProcessedConfig.continueOnError;
+
+                const childStart = new Date();
+                let childBranch: 'true' | 'false' | undefined;
+                const childResult = await childHandler.execute(
+                  childNodeData,
+                  context,
+                );
+                const childEnd = new Date();
+                const childDuration = childEnd.getTime() - childStart.getTime();
+
+                if (!childResult.success) {
+                  const failureError = new Error(
+                    childResult.error
+                      ? `Node ${childNodeId} failed: ${childResult.error}`
+                      : `Node ${childNodeId} failed due to unknown error`,
+                  );
+
+                  if (childContinueOnError || childResult.continueOnError) {
+                    this.logger.warn(
+                      `Node ${childNodeId} failed inside loop but continueOnError is enabled. Continuing iteration.`,
+                    );
+                    context[childNodeId] = {
+                      error: true,
+                      message: failureError.message,
+                    };
+                    try {
+                      await this.executionsService.addLog(executionId, {
+                        nodeId: childNodeId,
+                        nodeType: childNodeType,
+                        status: 'failed',
+                        input: childNodeData,
+                        output: context[childNodeId],
+                        error: failureError.message,
+                        startTime: childStart,
+                        endTime: childEnd,
+                        duration: childDuration,
+                        attemptNumber,
+                      });
+                    } catch (logError) {
+                      this.logger.error(
+                        `Failed to add execution log for node ${childNodeId}: ${(logError as Error).message}`,
+                      );
+                    }
+                    executedThisIteration.add(childNodeId);
+                    executedBodyNodes.add(childNodeId);
+                    continue;
+                  }
+
+                  throw failureError;
+                }
+
+                if (childNodeType === 'condition') {
+                  childBranch = childResult.output?.branch as 'true' | 'false' | undefined;
+                  if (childBranch) {
+                    this.logger.log(
+                      `Branch taken: ${childBranch} for node ${childNodeId} (loop iteration ${i + 1})`,
+                    );
+                    branchSelections.set(childNodeId, childBranch);
+                    const traversal = computeLoopTraversal(nodeId);
+                    order = traversal.order.filter(
+                      (id) => !executedThisIteration.has(id),
+                    );
+                    bodyIndex = 0;
+                  } else {
+                    this.logger.warn(
+                      `Condition node ${childNodeId} in loop did not produce a branch value`,
+                    );
+                  }
+                }
+
+                context[childNodeId] = childResult.output;
+                executedThisIteration.add(childNodeId);
+                executedBodyNodes.add(childNodeId);
+                successfulNodes.push(childNodeId);
+
+                const childLog: NodeExecutionLog = {
+                  nodeId: childNodeId,
+                  nodeType: childNodeType,
+                  status: 'success',
+                  input: childNodeData,
+                  output: childResult.output,
+                  branchTaken: childNodeType === 'condition' ? childBranch : undefined,
+                  startTime: childStart,
+                  endTime: childEnd,
+                  duration: childDuration,
+                  attemptNumber,
+                };
+
+                try {
+                  await this.executionsService.addLog(executionId, childLog);
+                } catch (logError) {
+                  this.logger.error(
+                    `Failed to add execution log for node ${childNodeId}: ${(logError as Error).message}`,
+                  );
+                }
+              }
+
+              this.logger.log(
+                `Loop node ${nodeId} iteration ${i + 1}/${loopItems.length} completed`,
+              );
+            }
+
+            if ((context as any)._loopStack) {
+              (context as any)._loopStack.pop();
+              const remaining = (context as any)._loopStack;
+              (context as any).loop = remaining.length ? remaining[remaining.length - 1] : undefined;
+            } else {
+              (context as any).loop = undefined;
+            }
+
+            executedBodyNodes.forEach((id) => processedNodes.add(id));
+            reachable = computeReachable();
+            sortedNodeIds = topologicalSort(
+              workflow.nodes,
+              workflow.edges ?? [],
+              edgeFilter,
+            );
+            index = 0;
+          } else {
+            if ((context as any)._loopStack) {
+              (context as any)._loopStack.pop();
+              const remaining = (context as any)._loopStack;
+              (context as any).loop = remaining.length ? remaining[remaining.length - 1] : undefined;
+            } else {
+              (context as any).loop = undefined;
+            }
           }
         }
 

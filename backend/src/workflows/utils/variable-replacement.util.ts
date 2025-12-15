@@ -53,6 +53,16 @@ function resolvePath(path: string, context: ExecutionContext): any {
 
   if (root === 'variables' || root === 'variable') {
     current = context.variables;
+  } else if (root === 'loop') {
+    const loopState: any =
+      (context as any).loop ?? ((context as any)._loopStack ?? []).slice(-1)[0];
+    if (!loopState) {
+      return undefined;
+    }
+    if (rest.length === 0) {
+      return loopState;
+    }
+    current = loopState;
   } else if (root === 'trigger') {
     current = context.trigger;
   } else {

@@ -7,6 +7,8 @@ const SUPPORTED_NODE_TYPES = new Set([
   'email',
   'sheets',
   'webhook',
+  'loop',
+  'ifElse',
 ]);
 
 export function validateWorkflowStructure(

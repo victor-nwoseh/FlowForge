@@ -8,6 +8,7 @@ import {
   Mail,
   MessageSquare,
   Play,
+  Repeat,
   Webhook,
   Zap,
 } from 'lucide-react';
@@ -54,6 +55,17 @@ export const NODE_TYPE_CONFIGS: Record<string, NodeTypeConfig> = {
       expression: '',
     },
     color: 'amber',
+    category: 'logic',
+  },
+  loop: {
+    name: 'Loop',
+    description: 'Iterate over array and execute actions for each item',
+    icon: Repeat,
+    defaultConfig: {
+      arraySource: '',
+      loopVariable: 'item',
+    },
+    color: 'purple',
     category: 'logic',
   },
   ifElse: {

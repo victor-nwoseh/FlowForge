@@ -559,6 +559,11 @@ const WorkflowBuilder = () => {
     }
 
     try {
+      const nodeIds = new Set(nodes.map((n) => n.id));
+      const sanitizedEdges = edges.filter(
+        (e) => nodeIds.has(e.source) && nodeIds.has(e.target),
+      );
+
       const payload = {
         name,
         description,
@@ -568,7 +573,7 @@ const WorkflowBuilder = () => {
           position,
           data,
         })),
-        edges: edges.map(
+        edges: sanitizedEdges.map(
           ({ id, source, target, type, sourceHandle, targetHandle }) => ({
             id,
             source,

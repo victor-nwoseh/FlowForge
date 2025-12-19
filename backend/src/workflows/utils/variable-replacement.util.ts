@@ -62,7 +62,30 @@ function resolvePath(path: string, context: ExecutionContext): any {
     if (rest.length === 0) {
       return loopState;
     }
-    current = loopState;
+
+    const [first, ...remaining] = rest;
+    let loopValue: any;
+
+    if (first === 'item') {
+      loopValue = loopState.currentItem;
+    } else if (first === 'index') {
+      loopValue = loopState.currentIndex;
+    } else if (first === 'count') {
+      loopValue = Array.isArray(loopState.items) ? loopState.items.length : undefined;
+    } else if (loopState.loopVariable && first === loopState.loopVariable) {
+      loopValue = loopState.currentItem;
+    } else {
+      loopValue = loopState[first];
+    }
+
+    for (const segment of remaining) {
+      if (loopValue == null) {
+        return undefined;
+      }
+      loopValue = loopValue[segment];
+    }
+
+    return loopValue;
   } else if (root === 'trigger') {
     current = context.trigger;
   } else {

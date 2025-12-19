@@ -50,6 +50,7 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
   const updateNode = useWorkflowStore((state) => state.updateNode);
   const deleteNode = useWorkflowStore((state) => state.deleteNode);
   const setSelectedNode = useWorkflowStore((state) => state.setSelectedNode);
+  const nodes = useWorkflowStore((state) => state.nodes);
 
   const { data: connections = [] } = useQuery<ConnectionSummary[]>({
     queryKey: ['connections'],
@@ -60,6 +61,13 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
   const [config, setConfig] = useState<Record<string, any>>({});
   const [triggerType, setTriggerType] = useState<'manual' | 'scheduled'>('manual');
   const [cronExpression, setCronExpression] = useState('');
+  const loopSourceType = useMemo<'node' | 'variable'>(() => {
+    const src = (config.arraySource ?? '').toString();
+    if (src.startsWith('node_') && src.includes('.')) {
+      return 'node';
+    }
+    return 'variable';
+  }, [config.arraySource]);
 
   useEffect(() => {
     if (selectedNode) {
@@ -123,6 +131,21 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
       finalConfig.expression = `${left} ${op} ${right}`.trim();
     }
 
+    if (selectedNode.data.type === 'loop') {
+      const src = (finalConfig.arraySource ?? '').toString().trim();
+      if (!src) {
+        toast.error('Array source is required for loop nodes.');
+        return;
+      }
+
+      const loopVar = (finalConfig.loopVariable ?? 'item').toString().trim() || 'item';
+      finalConfig.loopVariable = loopVar;
+      if (['variable', 'variables', 'loop', 'trigger'].includes(loopVar)) {
+        toast.error('Loop variable name conflicts with reserved keywords.');
+        return;
+      }
+    }
+
     const updatedData = {
       ...selectedNode.data,
       label,
@@ -177,7 +200,9 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
     !label ||
     (requiresSlack && !slackConnected) ||
     (requiresGoogle && !googleConnected) ||
-    (nodeType === 'trigger' && triggerType === 'scheduled' && !cronExpression.trim().match(/^\S+\s+\S+\s+\S+\s+\S+\s+\S+$/));
+    (nodeType === 'trigger' && triggerType === 'scheduled' && !cronExpression.trim().match(/^\S+\s+\S+\s+\S+\s+\S+\s+\S+$/)) ||
+    (nodeType === 'loop' &&
+      !(config.arraySource && config.arraySource.toString().trim().length > 0));
 
   if (!selectedNode || !isOpen) {
     return null;
@@ -510,6 +535,133 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
               />
               <p className="text-xs text-gray-500">
                 Strings, numbers, booleans, or JSON are supported; stored as provided.
+              </p>
+            </div>
+          </div>
+        );
+      case 'loop':
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Array Source</label>
+              <div className="flex flex-wrap gap-4">
+                <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="radio"
+                    name="loopSource"
+                    value="node"
+                    checked={loopSourceType === 'node'}
+                    onChange={() =>
+                      setConfig((prev) => ({
+                        ...prev,
+                        arraySource:
+                          prev.arraySource && prev.arraySource.toString().startsWith('node_')
+                            ? prev.arraySource
+                            : '',
+                      }))
+                    }
+                  />
+                  Previous node output
+                </label>
+                <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="radio"
+                    name="loopSource"
+                    value="variable"
+                    checked={loopSourceType === 'variable'}
+                    onChange={() =>
+                      setConfig((prev) => ({
+                        ...prev,
+                        arraySource:
+                          prev.arraySource && !prev.arraySource.toString().startsWith('node_')
+                            ? prev.arraySource
+                            : '',
+                      }))
+                    }
+                  />
+                  Variable
+                </label>
+              </div>
+              {loopSourceType === 'node' ? (
+                <div className="space-y-2">
+                  <select
+                    value={
+                      config.arraySource && config.arraySource.toString().startsWith('node_')
+                        ? config.arraySource
+                        : ''
+                    }
+                    onChange={(e) =>
+                      handleConfigChange('arraySource', e.target.value || '')
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  >
+                    <option value="">Select previous node output</option>
+                    {nodes
+                      .filter((n) => n.id !== selectedNode?.id)
+                      .map((n) => (
+                        <option key={n.id} value={`${n.id}.output`}>
+                          {`${n.data.label || n.id} (${n.id}.output)`}
+                        </option>
+                      ))}
+                  </select>
+                  <p className="text-xs text-gray-500">
+                    Picks the selected node&apos;s output (ensure it is an array).
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    placeholder="myArray"
+                    value={
+                      config.arraySource && !config.arraySource.toString().startsWith('node_')
+                        ? config.arraySource
+                        : ''
+                    }
+                    onChange={(event) => handleConfigChange('arraySource', event.target.value)}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Provide a variable name; accessible as {'{{variable.myArray}}'}.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">Item variable name</label>
+              <Input
+                placeholder="item"
+                value={config.loopVariable || 'item'}
+                onChange={(event) => handleConfigChange('loopVariable', event.target.value)}
+              />
+              <p className="text-xs text-gray-500">
+                Access current item as {'{{loop.item}}'} (or your chosen name).
+              </p>
+            </div>
+
+            <div className="space-y-2 rounded-lg border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-700">
+              <p className="font-semibold">Usage examples</p>
+              <ul className="list-disc pl-4">
+                <li>Current item: {'{{loop.item}}'}</li>
+                <li>Index: {'{{loop.index}}'}</li>
+                <li>Total count: {'{{loop.count}}'}</li>
+              </ul>
+              <p className="mt-2 text-indigo-600">
+                Example: if array is ['a','b','c'], loop.item will be 'a', then 'b', then 'c'.
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
+              <p>
+                Loop over:{' '}
+                <span className="font-semibold">
+                  {config.arraySource || '{{variable.myArray}}'}
+                </span>
+              </p>
+              <p>
+                Each item accessible as:{' '}
+                <span className="font-semibold">
+                  {`{{loop.${config.loopVariable || 'item'}}}`}
+                </span>
               </p>
             </div>
           </div>

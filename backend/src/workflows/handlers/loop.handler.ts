@@ -23,7 +23,8 @@ export class LoopHandler implements INodeHandler {
       };
     }
 
-    const resolvedArray = this.resolveArrayFromContext(arraySource, context);
+    const resolvedArrayRaw = this.resolveArrayFromContext(arraySource, context);
+    const resolvedArray = this.normalizeToArray(resolvedArrayRaw);
 
     if (!Array.isArray(resolvedArray)) {
       return {
@@ -79,6 +80,28 @@ export class LoopHandler implements INodeHandler {
     }
 
     return context.variables?.[trimmed];
+  }
+
+  private normalizeToArray(value: any): any[] | any {
+    if (Array.isArray(value)) {
+      return value;
+    }
+
+    if (typeof value === 'string') {
+      const text = value.trim();
+      if (text.startsWith('[') && text.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(text);
+          if (Array.isArray(parsed)) {
+            return parsed;
+          }
+        } catch {
+          // fall through
+        }
+      }
+    }
+
+    return value;
   }
 }
 

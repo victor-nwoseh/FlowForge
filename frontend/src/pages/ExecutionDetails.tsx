@@ -226,15 +226,15 @@ const ExecutionDetails = () => {
                       </div>
                       {log.branchTaken ? (
                         <div className="mt-1 flex flex-wrap items-center gap-2">
-                          <span
+                        <span
                             className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
-                              log.branchTaken === 'true'
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-rose-100 text-rose-700'
-                            }`}
-                          >
-                            {log.branchTaken === 'true' ? '✓ True Path' : '✗ False Path'}
-                          </span>
+                            log.branchTaken === 'true'
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-rose-100 text-rose-700'
+                          }`}
+                        >
+                          {log.branchTaken === 'true' ? '✓ True Path' : '✗ False Path'}
+                        </span>
                           {nextLog ? (
                             <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">
                               <GitBranch className="h-3 w-3" />

@@ -8,6 +8,7 @@ import {
   Mail,
   MessageSquare,
   Play,
+  Repeat,
   Webhook,
   Zap,
 } from 'lucide-react';
@@ -53,6 +54,14 @@ const NODE_TYPES: PaletteNode[] = [
     color: 'from-emerald-500 to-emerald-600',
     category: 'logic',
     description: 'Execute different actions based on condition',
+  },
+  {
+    type: 'loop',
+    label: 'Loop',
+    icon: Repeat,
+    color: 'from-purple-500 to-purple-600',
+    category: 'logic',
+    description: 'Iterate over array and execute actions for each item',
   },
   {
     type: 'delay',

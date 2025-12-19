@@ -120,9 +120,9 @@ export class WorkflowExecutorService {
         const filteredEdges = getFilteredEdges();
         const reachableSet = new Set<string>();
 
-        const triggerNodeIds = (workflow.nodes ?? [])
-          .filter((n) => n?.data?.type === 'trigger')
-          .map((n) => n.id);
+      const triggerNodeIds = (workflow.nodes ?? [])
+        .filter((n) => n?.data?.type === 'trigger')
+        .map((n) => n.id);
 
         // Build adjacency from filtered edges (respecting branch selection)
         const adjacency = new Map<string, string[]>();
@@ -275,6 +275,39 @@ export class WorkflowExecutorService {
           continue;
         }
 
+        const hasIncomingEdge = (workflow.edges ?? []).some(
+          (e) => e?.target === nodeId,
+        );
+
+        if (nodeType === 'loop' && !hasIncomingEdge) {
+          this.logger.warn(
+            `Skipping loop node ${nodeId} because it has no incoming edges (unreachable).`,
+          );
+          const skipLog: NodeExecutionLog = {
+            nodeId,
+            nodeType,
+            status: 'skipped',
+            input: node.data,
+            output: {
+              skipped: true,
+              reason: 'Loop node has no incoming edges',
+            },
+            startTime: new Date(),
+            endTime: new Date(),
+            duration: 0,
+            attemptNumber,
+          };
+          try {
+            await this.executionsService.addLog(executionId, skipLog);
+          } catch (logError) {
+            this.logger.error(
+              `Failed to add execution log for skipped loop node ${nodeId}: ${(logError as Error).message}`,
+            );
+          }
+          processedNodes.add(nodeId);
+          continue;
+        }
+
         const handler = this.nodeHandlerRegistry.getHandler(nodeType);
 
         if (!handler) {
@@ -290,6 +323,39 @@ export class WorkflowExecutorService {
           ...node.data,
           config: processedConfig,
         };
+
+        const loopContextPresent =
+          (context as any).loop || ((context as any)._loopStack ?? []).length > 0;
+        const needsLoopContext = usesLoopVariables(processedNodeData);
+
+        if (needsLoopContext && !loopContextPresent) {
+          this.logger.warn(
+            `Node ${nodeId} references loop variables but no loop context is available. Skipping node.`,
+          );
+          const skipLog: NodeExecutionLog = {
+            nodeId,
+            nodeType,
+            status: 'skipped',
+            input: processedNodeData,
+            output: {
+              skipped: true,
+              reason: 'Missing loop context for loop.* variables',
+            },
+            startTime: new Date(),
+            endTime: new Date(),
+            duration: 0,
+            attemptNumber,
+          };
+          try {
+            await this.executionsService.addLog(executionId, skipLog);
+          } catch (logError) {
+            this.logger.error(
+              `Failed to add execution log for skipped node ${nodeId}: ${(logError as Error).message}`,
+            );
+          }
+          processedNodes.add(nodeId);
+          continue;
+        }
 
         const continueOnError = !!processedConfig.continueOnError;
 
@@ -511,10 +577,10 @@ export class WorkflowExecutorService {
                     }
                     executedThisIteration.add(childNodeId);
                     executedBodyNodes.add(childNodeId);
-                    continue;
-                  }
+            continue;
+          }
 
-                  throw failureError;
+          throw failureError;
                 }
 
                 if (childNodeType === 'condition') {
@@ -710,5 +776,22 @@ function sanitizeDataStructure(value: any): any {
 
   return value;
 }
+
+function usesLoopVariables(obj: any): boolean {
+  const loopRegex = /{{\s*loop\./i;
+
+  const walker = (val: any): boolean => {
+    if (val === null || val === undefined) return false;
+    if (typeof val === 'string') return loopRegex.test(val);
+    if (Array.isArray(val)) return val.some((item) => walker(item));
+    if (typeof val === 'object') {
+      return Object.values(val).some((v) => walker(v));
+    }
+    return false;
+  };
+
+  return walker(obj);
+}
+
 
 

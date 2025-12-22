@@ -13,9 +13,11 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import { useAuthStore } from './store/auth.store';
 import ErrorBoundary from './components/ErrorBoundary';
+import useExecutionSocket from './hooks/useExecutionSocket';
 
 const App: React.FC = () => {
   const initAuth = useAuthStore((state) => state.initAuth);
+  useExecutionSocket();
 
   useEffect(() => {
     initAuth();

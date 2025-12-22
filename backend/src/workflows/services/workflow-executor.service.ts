@@ -10,6 +10,7 @@ import {
 import { topologicalSort } from '../utils/topological-sort.util';
 import { replaceVariablesInObject } from '../utils/variable-replacement.util';
 import { SchedulesService } from '../../schedules/schedules.service';
+import { ExecutionGateway } from '../../executions/gateways/execution.gateway';
 
 const SENSITIVE_KEYS = [
   'password',
@@ -31,6 +32,7 @@ export class WorkflowExecutorService {
     private readonly executionsService: ExecutionsService,
     private readonly nodeHandlerRegistry: NodeHandlerRegistryService,
     private readonly schedulesService: SchedulesService,
+    private readonly executionGateway: ExecutionGateway,
   ) {}
 
   async executeWorkflow(
@@ -46,6 +48,12 @@ export class WorkflowExecutorService {
       userId,
       triggerData,
       triggerSource,
+    );
+
+    this.executionGateway.emitExecutionStarted(
+      execution._id.toString(),
+      workflowId,
+      userId,
     );
 
     this.logger.log(`Workflow execution created: ${execution._id}`);
@@ -218,6 +226,8 @@ export class WorkflowExecutorService {
       );
 
       let reachable = computeReachable();
+      const totalNodes = sortedNodeIds.length;
+      let completedNodesCount = 0;
 
       if (sortedNodeIds.length === 0) {
         throw new Error('No executable nodes found in workflow');
@@ -435,6 +445,13 @@ export class WorkflowExecutorService {
             continue;
           }
 
+          this.executionGateway.emitNodeCompleted(
+            executionId,
+            nodeId,
+            nodeType,
+            'failed',
+            userId,
+          );
           throw failureError;
         }
 
@@ -689,9 +706,26 @@ export class WorkflowExecutorService {
         this.logger.log(
           `Node ${nodeId} (type: ${nodeType}) completed for execution ${executionId} in ${duration}ms`,
         );
+
+        this.executionGateway.emitNodeCompleted(
+          executionId,
+          nodeId,
+          nodeType,
+          'success',
+          userId,
+        );
+
+        completedNodesCount += 1;
+        this.executionGateway.emitExecutionProgress(
+          executionId,
+          completedNodesCount,
+          totalNodes,
+          userId,
+        );
       }
 
       await this.executionsService.updateStatus(executionId, 'success');
+      this.executionGateway.emitExecutionCompleted(executionId, 'success', userId);
       if (triggerSource === 'scheduled') {
         try {
           await this.schedulesService.updateLastRun(workflowId);
@@ -747,6 +781,7 @@ export class WorkflowExecutorService {
         executionId,
         JSON.stringify(failureDetails),
       );
+      this.executionGateway.emitExecutionCompleted(executionId, 'failed', userId);
 
       throw error;
     }

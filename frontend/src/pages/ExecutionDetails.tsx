@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   ArrowLeft,
@@ -14,6 +14,8 @@ import {
 import LoadingSpinner from '../components/LoadingSpinner';
 import { executionService } from '../services/execution.service';
 import type { NodeExecutionLog } from '../types/execution.types';
+import useExecutionSocket from '../hooks/useExecutionSocket';
+import toast from 'react-hot-toast';
 
 const statusColorMap = {
   success: 'text-emerald-600 bg-emerald-50',
@@ -87,6 +89,13 @@ const CollapsibleJson = ({
 const ExecutionDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
+  const { executionStarted, nodeCompleted, executionCompleted, progress } =
+    useExecutionSocket();
+  const [liveStatus, setLiveStatus] = useState<'running' | 'completed' | null>(null);
+  const [liveNodes, setLiveNodes] = useState<Map<string, 'success' | 'failed' | 'running'>>(
+    new Map(),
+  );
 
   const {
     data: execution,
@@ -98,6 +107,44 @@ const ExecutionDetails = () => {
     enabled: Boolean(id),
   });
 
+  useEffect(() => {
+    if (!executionStarted) return;
+    if (executionStarted.executionId === id) {
+      setLiveStatus('running');
+      toast.success('Execution started');
+      return;
+    }
+    if (execution && executionStarted.workflowId === execution.workflowId) {
+      navigate(`/executions/${executionStarted.executionId}`);
+    }
+  }, [executionStarted, id, execution, navigate]);
+
+  useEffect(() => {
+    if (nodeCompleted && nodeCompleted.executionId === id) {
+      setLiveNodes((prev) => {
+        const next = new Map(prev);
+        next.set(nodeCompleted.nodeId, nodeCompleted.status);
+        return next;
+      });
+    }
+  }, [nodeCompleted, id]);
+
+  useEffect(() => {
+    if (executionCompleted && executionCompleted.executionId === id) {
+      setLiveStatus('completed');
+      toast(
+        executionCompleted.status === 'success'
+          ? 'Execution completed successfully'
+          : 'Execution failed',
+      );
+      queryClient.invalidateQueries({ queryKey: ['execution', id] });
+      setTimeout(() => {
+        setLiveStatus(null);
+        setLiveNodes(new Map());
+      }, 1500);
+    }
+  }, [executionCompleted, id, queryClient]);
+
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -108,7 +155,7 @@ const ExecutionDetails = () => {
 
   if (isError || !execution) {
     return (
-      <div className="flex h-full items-center justify-center px-4">
+      <div className="flex h-full items-center justifycenter px-4">
         <div className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-600">
           Failed to load execution details. Please try again later.
         </div>
@@ -185,10 +232,30 @@ const ExecutionDetails = () => {
 
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Node Logs</h2>
-          <p className="text-sm text-gray-500">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-gray-900">Node Logs</h2>
+            {liveStatus === 'running' ? (
+              <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 animate-pulse">
+                🔵 Executing...
+              </span>
+            ) : null}
+          </div>
+          <div className="text-sm text-gray-500">
             {execution.logs.length} steps
-          </p>
+            {progress && (
+              <div className="mt-1 flex items-center gap-2 text-xs text-indigo-700">
+                <div className="h-2 w-32 overflow-hidden rounded-full bg-indigo-100">
+                  <div
+                    className="h-2 bg-gradient-to-r from-indigo-500 to-indigo-400 transition-all"
+                    style={{ width: `${Math.min(progress.percentage, 100)}%` }}
+                  />
+                </div>
+                <span>
+                  {progress.completed} / {progress.total} ({Math.round(progress.percentage)}%)
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {execution.logs.length === 0 ? (
@@ -201,6 +268,10 @@ const ExecutionDetails = () => {
               const isSuccess = log.status === 'success';
               const nextLog = execution.logs[index + 1];
               const tookBranch = log.nodeType === 'condition' && log.branchTaken;
+              const liveNodeStatus = liveNodes.get(log.nodeId);
+              const isLiveRunning = liveStatus === 'running' && liveNodeStatus === 'running';
+              const isLiveDoneSuccess = liveNodeStatus === 'success';
+              const isLiveDoneFailed = liveNodeStatus === 'failed';
               return (
                 <li
                   key={`${log.nodeId}-${log.startTime}`}
@@ -218,11 +289,26 @@ const ExecutionDetails = () => {
                         <LogIcon
                           className={`h-4 w-4 ${
                             isSuccess ? 'text-emerald-600' : 'text-rose-600'
-                          }`}
+                          } ${isLiveRunning ? 'animate-pulse' : ''}`}
                         />
                         <span>
                           {log.nodeId} ({log.nodeType})
                         </span>
+                        {isLiveRunning && (
+                          <span className="text-xs font-semibold text-indigo-600 animate-pulse">
+                            running...
+                          </span>
+                        )}
+                        {isLiveDoneSuccess && (
+                          <span className="text-xs font-semibold text-emerald-600">
+                            updated
+                          </span>
+                        )}
+                        {isLiveDoneFailed && (
+                          <span className="text-xs font-semibold text-rose-600">
+                            updated
+                          </span>
+                        )}
                       </div>
                       {log.branchTaken ? (
                         <div className="mt-1 flex flex-wrap items-center gap-2">

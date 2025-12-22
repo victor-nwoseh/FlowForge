@@ -31,6 +31,7 @@ import { useWorkflowStore } from '../store/workflow.store';
 import workflowService from '../services/workflow.service';
 import api from '../services/api';
 import { generateEdgeId, generateNodeId } from '../utils/workflow.utils';
+import useExecutionSocket from '../hooks/useExecutionSocket';
 import type {
   NodeData,
   Workflow,
@@ -124,6 +125,13 @@ const WorkflowBuilder = () => {
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [formErrors, setFormErrors] = useState<{ name?: string; description?: string }>({});
   const canExecuteWorkflow = Boolean(workflowId && workflowId !== 'new');
+  const { executionStarted, nodeCompleted, executionCompleted, progress } =
+    useExecutionSocket();
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [completedNodes, setCompletedNodes] = useState<
+    Map<string, 'success' | 'failed'>
+  >(new Map());
+  const [overlayStatus, setOverlayStatus] = useState<'success' | 'failed' | null>(null);
 
   const executeMutation = useMutation({
     mutationFn: async (workflowIdToExecute: string) => {
@@ -131,7 +139,6 @@ const WorkflowBuilder = () => {
     },
     onSuccess: () => {
       toast.success('Workflow execution started!');
-      navigate('/executions');
     },
     onError: (error: any) => {
       const missing = error?.response?.data?.missingServices;
@@ -232,6 +239,38 @@ const WorkflowBuilder = () => {
     isLoadingWorkflowRef.current = true;
     setIsLoadingWorkflow(Boolean(workflowId));
   }, [workflowId]);
+
+  useEffect(() => {
+    if (!workflowId || workflowId === 'new') return;
+    if (executionStarted && executionStarted.workflowId === workflowId) {
+      setIsExecuting(true);
+      setCompletedNodes(new Map());
+      setOverlayStatus(null);
+    }
+  }, [executionStarted, workflowId]);
+
+  useEffect(() => {
+    if (!workflowId || workflowId === 'new') return;
+    if (nodeCompleted && nodeCompleted.executionId && nodeCompleted.nodeId) {
+      setCompletedNodes((prev) => {
+        const next = new Map(prev);
+        next.set(nodeCompleted.nodeId, nodeCompleted.status);
+        return next;
+      });
+    }
+  }, [nodeCompleted, workflowId]);
+
+  useEffect(() => {
+    if (!workflowId || workflowId === 'new') return;
+    if (executionCompleted && executionCompleted.workflowId === workflowId) {
+      setOverlayStatus(executionCompleted.status === 'success' ? 'success' : 'failed');
+      setIsExecuting(false);
+      setTimeout(() => {
+        setCompletedNodes(new Map());
+        setOverlayStatus(null);
+      }, 1500);
+    }
+  }, [executionCompleted, workflowId]);
 
   useEffect(() => {
     const loadWorkflow = async () => {
@@ -769,6 +808,21 @@ const WorkflowBuilder = () => {
     isActive: currentWorkflow?.isActive ?? true,
   };
 
+  const nodesWithLiveState: WorkflowNode[] = nodes.map((n) => {
+    const completedStatus = completedNodes.get(n.id);
+    const isRunning = isExecuting && !completedStatus;
+    const isSuccess = completedStatus === 'success';
+    const isFailed = completedStatus === 'failed';
+    return {
+      ...n,
+      className: `${n.className ?? ''} ${
+        isRunning ? 'ring-2 ring-blue-400 animate-pulse' : ''
+      } ${isSuccess ? 'ring-2 ring-emerald-400' : ''} ${
+        isFailed ? 'ring-2 ring-rose-400' : ''
+      }`,
+    };
+  });
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <NodePalette />
@@ -870,13 +924,36 @@ const WorkflowBuilder = () => {
             }`}
             ref={reactFlowWrapper}
           >
+            {isExecuting || overlayStatus ? (
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center p-3">
+                <div
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold shadow-lg ${
+                    overlayStatus === 'failed'
+                      ? 'bg-rose-100 text-rose-700'
+                      : overlayStatus === 'success'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-blue-100 text-blue-700'
+                  } ${isExecuting ? 'animate-pulse' : ''}`}
+                >
+                  {overlayStatus === 'failed'
+                    ? '⚠️ Execution failed'
+                    : overlayStatus === 'success'
+                      ? '✅ Execution completed'
+                      : `⚡ Executing workflow... ${
+                          progress ? `${progress.completed}/${progress.total}` : ''
+                        }`}
+                </div>
+              </div>
+            ) : null}
             <ReactFlow
-              nodes={nodes}
+              nodes={nodesWithLiveState}
               edges={edges.map((edge) => decorateEdgeWithNodes(edge, nodes))}
               nodeTypes={nodeTypes}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
+              nodesDraggable={!isExecuting}
+              nodesConnectable={!isExecuting}
               isValidConnection={isValidConnection}
               onNodeClick={handleNodeClick}
               onNodeDoubleClick={handleNodeDoubleClick}

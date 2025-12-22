@@ -725,7 +725,12 @@ export class WorkflowExecutorService {
       }
 
       await this.executionsService.updateStatus(executionId, 'success');
-      this.executionGateway.emitExecutionCompleted(executionId, 'success', userId);
+    this.executionGateway.emitExecutionCompleted(
+      executionId,
+      'success',
+      userId,
+      workflowId,
+    );
       if (triggerSource === 'scheduled') {
         try {
           await this.schedulesService.updateLastRun(workflowId);
@@ -781,7 +786,7 @@ export class WorkflowExecutorService {
         executionId,
         JSON.stringify(failureDetails),
       );
-      this.executionGateway.emitExecutionCompleted(executionId, 'failed', userId);
+      this.executionGateway.emitExecutionCompleted(executionId, 'failed', userId, workflowId);
 
       throw error;
     }

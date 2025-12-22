@@ -84,10 +84,11 @@ export class ExecutionGateway implements OnGatewayConnection, OnModuleInit {
     executionId: string,
     status: 'success' | 'failed',
     userId: string,
+    workflowId?: string,
   ): void {
     this.server
       ?.to(userId)
-      .emit('execution:completed', { executionId, status, timestamp: new Date() });
+      .emit('execution:completed', { executionId, workflowId, status, timestamp: new Date() });
   }
 
   emitExecutionProgress(
@@ -95,9 +96,11 @@ export class ExecutionGateway implements OnGatewayConnection, OnModuleInit {
     completed: number,
     total: number,
     userId: string,
+    workflowId?: string,
   ): void {
     this.server?.to(userId).emit('execution:progress', {
       executionId,
+      workflowId,
       completed,
       total,
       percentage: total > 0 ? (completed / total) * 100 : 0,

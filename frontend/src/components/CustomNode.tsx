@@ -112,14 +112,14 @@ const CustomNode = ({ data, selected }: CustomNodeProps) => {
         </>
       ) : (
         <>
-          <Handle
-            type="source"
-            position={Position.Bottom}
-            className="!h-3.5 !w-3.5 border-2 border-white bg-indigo-500 shadow-[0_0_0_4px_rgba(99,102,241,0.15)] transition group-hover:shadow-[0_0_0_6px_rgba(99,102,241,0.25)]"
-          />
-          <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-indigo-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-            Out
-          </span>
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        className="!h-3.5 !w-3.5 border-2 border-white bg-indigo-500 shadow-[0_0_0_4px_rgba(99,102,241,0.15)] transition group-hover:shadow-[0_0_0_6px_rgba(99,102,241,0.25)]"
+      />
+      <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-indigo-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+        Out
+      </span>
         </>
       )}
     </div>

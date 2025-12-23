@@ -9,6 +9,7 @@ import ExecutionsList from './pages/ExecutionsList';
 import ExecutionDetails from './pages/ExecutionDetails';
 import Integrations from './pages/Integrations';
 import Schedules from './pages/Schedules';
+import Templates from './pages/Templates';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import { useAuthStore } from './store/auth.store';
@@ -41,6 +42,7 @@ const App: React.FC = () => {
               <Route path="/executions" element={<ExecutionsList />} />
               <Route path="/executions/:id" element={<ExecutionDetails />} />
               <Route path="/schedules" element={<Schedules />} />
+              <Route path="/templates" element={<Templates />} />
               <Route path="/dashboard" element={<Dashboard />} />
             </Route>
           </Routes>

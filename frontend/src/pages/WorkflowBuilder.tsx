@@ -283,8 +283,8 @@ const WorkflowBuilder = () => {
         setName(workflow.name);
         setDescription(workflow.description ?? '');
         const workflowNodes = (workflow.nodes ?? []).map((node) => ({
-          ...node,
-          type: 'custom',
+            ...node,
+            type: 'custom',
         }));
 
         setNodes(workflowNodes);
@@ -416,9 +416,9 @@ const WorkflowBuilder = () => {
 
       const newEdge: WorkflowEdge = decorateEdgeWithNodes(
         {
-          id: generateEdgeId(connection.source, connection.target),
-          source: connection.source,
-          target: connection.target,
+        id: generateEdgeId(connection.source, connection.target),
+        source: connection.source,
+        target: connection.target,
           sourceHandle:
             'sourceHandle' in connection && connection.sourceHandle
               ? connection.sourceHandle
@@ -427,10 +427,10 @@ const WorkflowBuilder = () => {
             'targetHandle' in connection && connection.targetHandle
               ? connection.targetHandle
               : undefined,
-          type:
-            'type' in connection && typeof connection.type === 'string'
-              ? connection.type
-              : undefined,
+        type:
+          'type' in connection && typeof connection.type === 'string'
+            ? connection.type
+            : undefined,
         },
         nodes,
       );
@@ -614,10 +614,10 @@ const WorkflowBuilder = () => {
         })),
         edges: sanitizedEdges.map(
           ({ id, source, target, type, sourceHandle, targetHandle }) => ({
-            id,
-            source,
-            target,
-            type,
+          id,
+          source,
+          target,
+          type,
             sourceHandle,
             targetHandle,
           }),

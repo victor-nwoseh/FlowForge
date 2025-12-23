@@ -93,8 +93,9 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
         }
       }
       setConfig(nodeConfig);
-      const scheduled = nodeConfig.scheduled === true;
-      setTriggerType(scheduled ? 'scheduled' : 'manual');
+      const isScheduled =
+        nodeConfig.scheduled === true || nodeConfig.triggerType === 'scheduled';
+      setTriggerType(isScheduled ? 'scheduled' : 'manual');
       setCronExpression(nodeConfig.cronExpression || '');
     }
   }, [selectedNode]);
@@ -115,8 +116,10 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
       if (triggerType === 'scheduled') {
         finalConfig.scheduled = true;
         finalConfig.cronExpression = cronExpression.trim();
+        finalConfig.triggerType = 'scheduled';
       } else {
         finalConfig.scheduled = false;
+        finalConfig.triggerType = 'manual';
         delete finalConfig.cronExpression;
       }
     }

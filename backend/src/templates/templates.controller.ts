@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Post } from '@nestjs/common';
 
 import { TemplatesService } from './templates.service';
 
@@ -19,6 +20,12 @@ export class TemplatesController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.templatesService.findOne(id);
+  }
+
+  @Post(':id/increment-usage')
+  async increment(@Param('id') id: string) {
+    await this.templatesService.incrementUsage(id);
+    return { success: true };
   }
 }
 

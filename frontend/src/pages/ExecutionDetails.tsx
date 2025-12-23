@@ -233,7 +233,7 @@ const ExecutionDetails = () => {
       <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold text-gray-900">Node Logs</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Node Logs</h2>
             {liveStatus === 'running' ? (
               <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 animate-pulse">
                 🔵 Executing...

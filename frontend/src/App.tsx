@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
+import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -18,21 +19,24 @@ import useExecutionSocket from './hooks/useExecutionSocket';
 
 const App: React.FC = () => {
   const initAuth = useAuthStore((state) => state.initAuth);
+  const location = useLocation();
   useExecutionSocket();
 
   useEffect(() => {
     initAuth();
   }, [initAuth]);
 
+  const isLandingPage = location.pathname === '/';
+
   return (
     <>
-      <Navbar />
-      <main className="min-h-[calc(100vh-4rem)] bg-gray-50">
+      {!isLandingPage && <Navbar />}
+      <main className={isLandingPage ? '' : 'min-h-[calc(100vh-4rem)] bg-gray-50'}>
         <ErrorBoundary>
           <Routes>
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/" element={<Navigate to="/workflows" replace />} />
 
             <Route element={<ProtectedRoute />}>
               <Route path="/workflows" element={<WorkflowsList />} />

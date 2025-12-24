@@ -2,8 +2,287 @@
 @tailwind components;
 @tailwind utilities;
 
+/* === BASE STYLES === */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Outfit', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* === WARM FORGE DESIGN SYSTEM === */
+
+/* Deep space gradient background */
+.deep-space-gradient {
+  background: linear-gradient(
+    180deg,
+    #0a0908 0%,
+    #121110 40%,
+    #1a1816 70%,
+    #121110 100%
+  );
+}
+
+/* Liquid metal animated gradient */
+.liquid-metal-bg {
+  background: linear-gradient(
+    -45deg,
+    rgba(179, 143, 0, 0.08) 0%,
+    rgba(230, 92, 0, 0.12) 25%,
+    rgba(166, 124, 82, 0.08) 50%,
+    rgba(230, 92, 0, 0.06) 75%,
+    rgba(179, 143, 0, 0.1) 100%
+  );
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+
+/* Radial spotlight effect */
+.radial-spotlight {
+  background: radial-gradient(
+    ellipse 80% 50% at 50% 0%,
+    rgba(230, 92, 0, 0.08) 0%,
+    transparent 60%
+  );
+}
+
+/* Noise texture overlay */
+.noise-texture {
+  position: relative;
+}
+
+.noise-texture::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+/* Ember glow effect */
+.ember-glow {
+  box-shadow: 
+    0 0 20px rgba(230, 92, 0, 0.2),
+    0 0 40px rgba(230, 92, 0, 0.1),
+    0 0 60px rgba(230, 92, 0, 0.05);
+}
+
+/* Gold glow effect */
+.gold-glow {
+  box-shadow: 
+    0 0 20px rgba(255, 209, 26, 0.15),
+    0 0 40px rgba(255, 209, 26, 0.08);
+}
+
+/* Text gradient - molten metal */
+.text-molten-gradient {
+  background: linear-gradient(
+    135deg,
+    #d4b896 0%,
+    #e65c00 40%,
+    #ffd11a 60%,
+    #e65c00 80%,
+    #d4b896 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientShift 5s ease infinite;
+}
+
+/* Static gold gradient text */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #b38f00 0%, #e6b800 50%, #ffd11a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Ember gradient text */
+.text-ember-gradient {
+  background: linear-gradient(135deg, #cc5200 0%, #e65c00 50%, #ff751a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Glass card effect */
+.glass-card {
+  background: rgba(26, 24, 22, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(166, 124, 82, 0.1);
+}
+
+/* Forge button base */
+.btn-forge {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background-color: #e65c00;
+  color: #0a0908;
+  box-shadow: 0 4px 6px -1px rgba(230, 92, 0, 0.1), 0 2px 4px -2px rgba(230, 92, 0, 0.1);
+}
+
+.btn-forge:hover {
+  background-color: #ff751a;
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(230, 92, 0, 0.3);
+}
+
+/* Forge button secondary */
+.btn-forge-secondary {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background-color: transparent;
+  color: #d9d0c7;
+  border: 1px solid #3d3632;
+}
+
+.btn-forge-secondary:hover {
+  border-color: rgba(230, 92, 0, 0.5);
+  color: #ff944d;
+}
+
+/* === ANIMATION DELAYS (for staggered reveals) === */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+.delay-700 { animation-delay: 700ms; }
+.delay-800 { animation-delay: 800ms; }
+
+/* === SCROLLBAR STYLING === */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #121110;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3d3632;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #524a44;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #3d3632 #121110;
+}
+
+/* === SELECTION STYLING === */
+::selection {
+  background: rgba(230, 92, 0, 0.3);
+  color: #f5f2ef;
+}
+
+::-moz-selection {
+  background: rgba(230, 92, 0, 0.3);
+  color: #f5f2ef;
+}
+
+/* === FEATURE CARD === */
+.feature-card {
+  background-color: rgba(18, 17, 16, 0.5);
+  border: 1px solid rgba(46, 41, 36, 0.3);
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  background-color: rgba(18, 17, 16, 0.8);
+  border-color: rgba(230, 92, 0, 0.3);
+}
+
+.feature-card-icon {
+  background: linear-gradient(to bottom right, rgba(179, 71, 0, 0.2), rgba(128, 51, 0, 0.1));
+  border: 1px solid rgba(179, 71, 0, 0.2);
+  transition: border-color 0.3s ease;
+}
+
+.feature-card:hover .feature-card-icon {
+  border-color: rgba(179, 71, 0, 0.4);
+}
+
+/* === SCROLL-TRIGGERED ANIMATIONS === */
+
+/* Base state for animated elements (hidden) */
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+/* Visible state (when in viewport) */
+.animate-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Staggered delays for children */
+.stagger-1 { transition-delay: 0ms; }
+.stagger-2 { transition-delay: 100ms; }
+.stagger-3 { transition-delay: 200ms; }
+.stagger-4 { transition-delay: 300ms; }
+.stagger-5 { transition-delay: 400ms; }
+.stagger-6 { transition-delay: 500ms; }
+
+/* Hero entrance animation (immediate, not scroll-triggered) */
+.animate-hero-entrance {
+  animation: heroEntrance 0.8s ease-out forwards;
+}
+
+@keyframes heroEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Staggered hero delays */
+.hero-delay-1 { animation-delay: 0.1s; opacity: 0; }
+.hero-delay-2 { animation-delay: 0.2s; opacity: 0; }
+.hero-delay-3 { animation-delay: 0.3s; opacity: 0; }
+.hero-delay-4 { animation-delay: 0.4s; opacity: 0; }
+.hero-delay-5 { animation-delay: 0.5s; opacity: 0; }
+
+/* Scale up animation for feature cards */
+.animate-scale-on-scroll {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.animate-scale-on-scroll.is-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Fade in animation (no translate) */
+.animate-fade-on-scroll {
+  opacity: 0;
+  transition: opacity 0.6s ease-out;
+}
+
+.animate-fade-on-scroll.is-visible {
+  opacity: 1;
+}

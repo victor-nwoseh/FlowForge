@@ -92,6 +92,9 @@ const config = {
         'float': 'float 6s ease-in-out infinite',
         // Glow pulse for accents
         'glow-pulse': 'glowPulse 3s ease-in-out infinite',
+        // Star border animations
+        'star-movement-bottom': 'star-movement-bottom linear infinite alternate',
+        'star-movement-top': 'star-movement-top linear infinite alternate',
       },
 
       keyframes: {
@@ -110,6 +113,14 @@ const config = {
         glowPulse: {
           '0%, 100%': { opacity: '0.5' },
           '50%': { opacity: '1' },
+        },
+        'star-movement-bottom': {
+          '0%': { transform: 'translateX(0)', opacity: '0.8' },
+          '100%': { transform: 'translateX(-700px)', opacity: '0.8' },
+        },
+        'star-movement-top': {
+          '0%': { transform: 'translateX(0)', opacity: '0.8' },
+          '100%': { transform: 'translateX(700px)', opacity: '0.8' },
         },
       },
 

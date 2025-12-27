@@ -1,9 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, ArrowRight, GitBranch, Link2, Clock, Activity, Plug, MousePointerClick, Rocket } from 'lucide-react';
+import { ArrowRight, GitBranch, Link2, Clock, Activity, Plug, MousePointerClick, Rocket } from 'lucide-react';
 import { useScrollAnimation } from '../hooks/useScrollAnimation';
 import TextType from '../components/TextType';
 import Silk from '../components/Silk';
+import TrueFocus from '../components/TrueFocus';
+import GlareHover from '../components/GlareHover';
+import StarBorder from '../components/StarBorder';
+import LiquidMetalButton from '../components/LiquidMetalButton';
 
 // Feature data
 const features = [
@@ -63,29 +67,26 @@ const LandingPage: React.FC = () => {
           <nav className="w-full px-6 py-5">
             <div className="max-w-6xl mx-auto flex items-center justify-between">
               {/* Logo */}
-              <Link to="/" className="flex items-center gap-2 group">
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-ember-400 to-ember-600 flex items-center justify-center shadow-ember-glow group-hover:shadow-ember-lg transition-shadow duration-300">
-                  <Zap className="w-5 h-5 text-forge-950" strokeWidth={2.5} />
-                </div>
-                <span className="text-xl font-semibold text-forge-50 tracking-tight">
-                  Flow<span className="text-ember-300">Forge</span>
-                </span>
+              <Link to="/" className="flex items-center text-xl font-semibold text-forge-50 tracking-tight">
+                <TrueFocus
+                  sentence="Flow Forge"
+                  manualMode={false}
+                  blurAmount={4}
+                  borderColor="#e97f38"
+                  glowColor="rgba(233, 127, 56, 0.6)"
+                  animationDuration={0.5}
+                  pauseBetweenAnimations={0.5}
+                />
               </Link>
 
               {/* Auth links */}
               <div className="flex items-center gap-4">
-                <Link
-                  to="/login"
-                  className="px-4 py-2 text-sm font-medium text-forge-200 hover:text-forge-50 transition-colors duration-200"
-                >
+                <LiquidMetalButton to="/login" size="sm" variant="outline">
                   Log in
-                </Link>
-                <Link
-                  to="/register"
-                  className="btn-forge text-sm !py-2 !px-4"
-                >
+                </LiquidMetalButton>
+                <LiquidMetalButton to="/register" size="sm">
                   Get Started
-                </Link>
+                </LiquidMetalButton>
               </div>
             </div>
           </nav>
@@ -118,26 +119,17 @@ const LandingPage: React.FC = () => {
                 FlowForge makes workflow automation simple, visual, and powerful.
               </p>
 
-              {/* CTAs */}
-              <div className="animate-hero-entrance hero-delay-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link
-                  to="/register"
-                  className="btn-forge group flex items-center gap-2 text-base"
-                >
+              {/* CTA */}
+              <div className="animate-hero-entrance hero-delay-4">
+                <LiquidMetalButton to="/register" size="lg">
                   Start Building Free
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
-                </Link>
-                <Link
-                  to="/login"
-                  className="btn-forge-secondary flex items-center gap-2 text-base"
-                >
-                  View Demo
-                </Link>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
+                </LiquidMetalButton>
               </div>
 
               {/* Trust signal */}
               <p className="animate-hero-entrance hero-delay-5 mt-8 text-sm text-forge-400">
-                No credit card required · Free tier available
+                From idea to automation in minutes
               </p>
             </div>
           </div>
@@ -168,25 +160,47 @@ const LandingPage: React.FC = () => {
           {/* Features grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
             {features.map((feature, index) => (
-              <div
+              <StarBorder
                 key={index}
-                className={`feature-card p-6 lg:p-8 rounded-2xl animate-scale-on-scroll stagger-${index + 1} ${featuresVisible ? 'is-visible' : ''}`}
+                as="div"
+                color="#ff6b1a"
+                speed="3s"
+                thickness={2}
+                className={`animate-scale-on-scroll stagger-${index + 1} ${featuresVisible ? 'is-visible' : ''}`}
               >
-                {/* Icon */}
-                <div className="feature-card-icon w-12 h-12 rounded-xl flex items-center justify-center mb-5">
-                  <feature.icon className="w-6 h-6" style={{ color: '#cc5200' }} />
-                </div>
+                <GlareHover
+                  width="100%"
+                  height="100%"
+                  background="linear-gradient(135deg, rgba(18, 17, 16, 0.95) 0%, rgba(26, 24, 22, 0.9) 100%)"
+                  borderRadius="20px"
+                  borderColor="rgba(46, 41, 36, 0.5)"
+                  glareColor="#e65c00"
+                  glareOpacity={0.15}
+                  glareAngle={-30}
+                  glareSize={300}
+                  transitionDuration={2000}
+                  playOnce={true}
+                  className="p-6 lg:p-8"
+                  style={{ minHeight: '200px' }}
+                >
+                  <div className="text-left w-full">
+                    {/* Icon */}
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ background: 'linear-gradient(135deg, rgba(230, 92, 0, 0.15) 0%, rgba(128, 51, 0, 0.1) 100%)', border: '1px solid rgba(230, 92, 0, 0.2)' }}>
+                      <feature.icon className="w-6 h-6" style={{ color: '#cc5200' }} />
+                    </div>
 
-                {/* Title */}
-                <h3 className="text-xl font-semibold mb-3" style={{ color: '#f5f2ef' }}>
-                  {feature.title}
-                </h3>
+                    {/* Title */}
+                    <h3 className="text-xl font-semibold mb-3" style={{ color: '#f5f2ef' }}>
+                      {feature.title}
+                    </h3>
 
-                {/* Description */}
-                <p className="leading-relaxed" style={{ color: '#8a7f75' }}>
-                  {feature.description}
-                </p>
-              </div>
+                    {/* Description */}
+                    <p className="leading-relaxed" style={{ color: '#8a7f75' }}>
+                      {feature.description}
+                    </p>
+                  </div>
+                </GlareHover>
+              </StarBorder>
             ))}
           </div>
         </div>
@@ -211,9 +225,6 @@ const LandingPage: React.FC = () => {
 
           {/* Steps */}
           <div className="relative">
-            {/* Connecting line (desktop only) */}
-            <div className={`hidden lg:block absolute top-24 left-[16.67%] right-[16.67%] h-px animate-fade-on-scroll ${howItWorksVisible ? 'is-visible' : ''}`} style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(230, 92, 0, 0.3) 20%, rgba(230, 92, 0, 0.3) 80%, transparent 100%)', transitionDelay: '0.3s' }} />
-
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-8">
               {/* Step 1 */}
               <div className={`text-center animate-on-scroll stagger-1 ${howItWorksVisible ? 'is-visible' : ''}`}>
@@ -305,35 +316,15 @@ const LandingPage: React.FC = () => {
 
           {/* Subheadline */}
           <p className={`text-lg mb-10 max-w-2xl mx-auto animate-on-scroll stagger-1 ${ctaVisible ? 'is-visible' : ''}`} style={{ color: '#8a7f75' }}>
-            Join thousands of teams automating their work with FlowForge. 
-            Start building in minutes—no credit card required.
+            From simple tasks to complex pipelines—bring your automation ideas to life.
           </p>
 
           {/* CTA Button */}
           <div className={`animate-on-scroll stagger-2 ${ctaVisible ? 'is-visible' : ''}`}>
-            <Link
-              to="/register"
-              className="btn-forge inline-flex items-center gap-2 text-lg px-8 py-4"
-            >
+            <LiquidMetalButton to="/register" size="lg">
               Get Started Free
               <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
-
-          {/* Trust signals */}
-          <div className={`mt-10 flex flex-wrap items-center justify-center gap-6 text-sm animate-on-scroll stagger-3 ${ctaVisible ? 'is-visible' : ''}`} style={{ color: '#6b6159' }}>
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#cc5200' }} />
-              <span>Free tier available</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#cc5200' }} />
-              <span>No credit card required</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#cc5200' }} />
-              <span>Setup in under 5 minutes</span>
-            </div>
+            </LiquidMetalButton>
           </div>
         </div>
       </section>
@@ -343,24 +334,17 @@ const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #cc5200 0%, #803300 100%)' }}>
-                <Zap className="w-4 h-4" style={{ color: '#0a0908' }} strokeWidth={2.5} />
-              </div>
-              <span className="text-lg font-semibold" style={{ color: '#f5f2ef' }}>
-                Flow<span style={{ color: '#e65c00' }}>Forge</span>
-              </span>
+            <Link to="/" className="flex items-center text-lg font-semibold" style={{ color: '#f5f2ef' }}>
+              <TrueFocus
+                sentence="Flow Forge"
+                manualMode={false}
+                blurAmount={4}
+                borderColor="#e97f38"
+                glowColor="rgba(233, 127, 56, 0.6)"
+                animationDuration={0.5}
+                pauseBetweenAnimations={0.5}
+              />
             </Link>
-
-            {/* Links */}
-            <div className="flex items-center gap-8 text-sm" style={{ color: '#6b6159' }}>
-              <Link to="/login" className="hover:text-forge-200 transition-colors duration-200">
-                Log in
-              </Link>
-              <Link to="/register" className="hover:text-forge-200 transition-colors duration-200">
-                Sign up
-              </Link>
-            </div>
 
             {/* Copyright */}
             <p className="text-sm" style={{ color: '#524a44' }}>

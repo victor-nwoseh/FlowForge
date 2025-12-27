@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Zap, ArrowRight, GitBranch, Link2, Clock, Activity, Plug, MousePointerClick, Rocket } from 'lucide-react';
 import { useScrollAnimation } from '../hooks/useScrollAnimation';
+import TextType from '../components/TextType';
+import Silk from '../components/Silk';
 
 // Feature data
 const features = [
@@ -37,17 +39,22 @@ const LandingPage: React.FC = () => {
     <div className="bg-forge-950">
       {/* ===== HERO SECTION ===== */}
       <section className="min-h-screen relative overflow-hidden">
-        {/* Background layers */}
-        <div className="absolute inset-0 deep-space-gradient" />
-        <div className="absolute inset-0 liquid-metal-bg" />
-        <div className="absolute inset-0 radial-spotlight" />
-        <div className="absolute inset-0 noise-texture" />
-
-        {/* Animated orb - decorative element */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] opacity-30">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-ember-500/20 via-transparent to-gold-500/10 blur-3xl animate-pulse-slow" />
-          <div className="absolute inset-12 rounded-full bg-gradient-to-tr from-bronze-500/15 via-transparent to-ember-400/10 blur-2xl animate-pulse-slow" style={{ animationDelay: '1s' }} />
+        {/* Silk Background - React Bits */}
+        <div className="absolute inset-0">
+          <Silk
+            speed={3}
+            scale={1}
+            color="#2d1810"
+            noiseIntensity={0}
+            rotation={0}
+          />
         </div>
+        
+        {/* Overlay gradient for depth */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-forge-950/30 to-forge-950/80" />
+        
+        {/* Subtle radial spotlight */}
+        <div className="absolute inset-0 radial-spotlight opacity-60" />
 
         {/* Content wrapper */}
         <div className="relative z-10 min-h-screen flex flex-col">
@@ -94,9 +101,15 @@ const LandingPage: React.FC = () => {
 
               {/* Headline */}
               <h1 className="animate-hero-entrance hero-delay-2 text-5xl sm:text-6xl lg:text-7xl font-bold text-forge-50 leading-tight mb-6">
-                Build workflows that
-                <br />
-                <span className="text-molten-gradient">work for you</span>
+                <TextType
+                  text="Build workflows that work for you"
+                  as="span"
+                  typingSpeed={75}
+                  initialDelay={500}
+                  loop={false}
+                  showCursor={false}
+                  className="hero-headline-type"
+                />
               </h1>
 
               {/* Subheadline */}

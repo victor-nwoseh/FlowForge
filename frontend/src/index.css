@@ -286,3 +286,39 @@ body {
 .animate-fade-on-scroll.is-visible {
   opacity: 1;
 }
+
+/* === HERO HEADLINE TEXT TYPE === */
+.hero-headline-type {
+  display: inline;
+}
+
+.hero-headline-type .text-type__content {
+  background: linear-gradient(
+    135deg,
+    #f5f2ef 0%,
+    #f5f2ef 55%,
+    #d4b896 60%,
+    #e65c00 70%,
+    #ffd11a 80%,
+    #e65c00 90%,
+    #d4b896 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: heroGradientShift 6s ease infinite;
+}
+
+@keyframes heroGradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.hero-headline-type .text-type__cursor {
+  -webkit-text-fill-color: #e65c00;
+  color: #e65c00;
+  font-weight: 300;
+  margin-left: 0;
+}

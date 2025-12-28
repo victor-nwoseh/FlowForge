@@ -646,10 +646,6 @@ const WorkflowBuilder = () => {
     navigate,
   ]);
 
-  const handleRunWorkflow = () => {
-    toast.success('Workflow run queued (placeholder)');
-  };
-
   useEffect(() => {
     if (!workflowId) {
       return;
@@ -887,14 +883,6 @@ const WorkflowBuilder = () => {
               className="w-auto"
             >
               Show Stats
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={handleRunWorkflow}
-              icon={Play}
-              className="w-auto"
-            >
-              Run
             </Button>
           </div>
         </header>

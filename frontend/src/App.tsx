@@ -27,11 +27,12 @@ const App: React.FC = () => {
   }, [initAuth]);
 
   const isLandingPage = location.pathname === '/';
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
   return (
     <>
-      {!isLandingPage && <Navbar />}
-      <main className={isLandingPage ? '' : 'min-h-[calc(100vh-4rem)] bg-gray-50'}>
+      {!isLandingPage && !isAuthPage && <Navbar />}
+      <main className={isLandingPage || isAuthPage ? '' : 'min-h-[calc(100vh-4rem)] bg-gray-50'}>
         <ErrorBoundary>
           <Routes>
             <Route path="/" element={<LandingPage />} />

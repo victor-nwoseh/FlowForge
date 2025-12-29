@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import Input from '../components/Input';
-import Button from '../components/Button';
+import LiquidMetalButton from '../components/LiquidMetalButton';
+import TrueFocus from '../components/TrueFocus';
 import { authService } from '../services/auth.service';
 import { useAuthStore } from '../store/auth.store';
 import { RegisterData, AuthResponse } from '../types/auth.types';
@@ -34,16 +35,35 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-white shadow-lg rounded-xl p-8">
-        <h2 className="text-2xl font-semibold text-gray-900 text-center mb-2">Create Account</h2>
-        <p className="text-sm text-gray-500 text-center mb-6">
+    <div className="min-h-screen bg-forge-950 flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Background ambient effects */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-forge-950/30 to-forge-950/80 pointer-events-none" />
+      <div className="absolute top-0 right-1/4 w-[800px] h-[400px] rounded-full bg-ember-500/5 blur-[100px] pointer-events-none" />
+      
+      {/* Register Container */}
+      <div className="w-full max-w-md bg-forge-900/60 backdrop-blur-xl border border-forge-800 shadow-2xl rounded-2xl p-8 relative z-10">
+        <div className="flex justify-center mb-6">
+          <Link to="/" className="inline-block text-forge-50">
+            <TrueFocus
+              sentence="Flow Forge"
+              manualMode={false}
+              blurAmount={4}
+              borderColor="#e97f38"
+              glowColor="rgba(233, 127, 56, 0.6)"
+              animationDuration={0.5}
+              pauseBetweenAnimations={0.5}
+            />
+          </Link>
+        </div>
+
+        <h2 className="text-xl font-semibold text-forge-100 text-center mb-2">Create Account</h2>
+        <p className="text-sm text-forge-300 text-center mb-8">
           Start building powerful automations with FlowForge.
         </p>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="email" className="block text-sm font-medium text-forge-200 mb-2">
               Email
             </label>
             <Input
@@ -53,11 +73,12 @@ const Register: React.FC = () => {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
+              className="bg-forge-950 border-forge-700 text-forge-100 placeholder:text-forge-500 focus:border-ember-500 focus:ring-1 focus:ring-ember-500/50"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="password" className="block text-sm font-medium text-forge-200 mb-2">
               Password
             </label>
             <Input
@@ -68,17 +89,23 @@ const Register: React.FC = () => {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
+              className="bg-forge-950 border-forge-700 text-forge-100 placeholder:text-forge-500 focus:border-ember-500 focus:ring-1 focus:ring-ember-500/50"
             />
           </div>
 
-          <Button type="submit" disabled={registerMutation.isPending}>
-            {registerMutation.isPending ? 'Creating account...' : 'Create account'}
-          </Button>
+          <div className="pt-2">
+            <LiquidMetalButton 
+              onClick={() => {}} 
+              className="w-full"
+            >
+              {registerMutation.isPending ? 'Creating account...' : 'Create account'}
+            </LiquidMetalButton>
+          </div>
         </form>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
+        <p className="text-center text-sm text-forge-400 mt-8">
           Already have an account?{' '}
-          <Link to="/login" className="text-blue-600 hover:underline">
+          <Link to="/login" className="text-ember-400 hover:text-ember-300 font-medium transition-colors">
             Sign in
           </Link>
         </p>

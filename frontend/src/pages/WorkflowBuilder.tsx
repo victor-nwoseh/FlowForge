@@ -18,10 +18,10 @@ import { Background, BackgroundVariant } from '@reactflow/background';
 import 'reactflow/dist/style.css';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Play, Save } from 'lucide-react';
+import { Map as MapIcon, Play, Save } from 'lucide-react';
 
-import Button from '../components/Button';
 import Input from '../components/Input';
+import LiquidMetalButton from '../components/LiquidMetalButton';
 import CustomNode from '../components/CustomNode';
 import NodeConfigPanel from '../components/NodeConfigPanel';
 import NodePalette from '../components/NodePalette';
@@ -123,6 +123,7 @@ const WorkflowBuilder = () => {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const autoSaveTimeoutRef = useRef<number | null>(null);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [showMinimap, setShowMinimap] = useState(true);
   const [formErrors, setFormErrors] = useState<{ name?: string; description?: string }>({});
   const canExecuteWorkflow = Boolean(workflowId && workflowId !== 'new');
   const { executionStarted, nodeCompleted, executionCompleted, progress } =
@@ -820,50 +821,71 @@ const WorkflowBuilder = () => {
   });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen max-h-[100vh] overflow-hidden bg-forge-950 relative" style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh' }}>
+      {/* Ambient background effects */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-forge-950/30 to-forge-950/80 pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full bg-ember-500/5 blur-[100px] pointer-events-none" />
+      
       <NodePalette />
-      <div className="flex flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
-          <div className="flex flex-1 items-center gap-4">
-            <Input
-              className="max-w-sm"
-              placeholder="Workflow name"
-              value={name}
-              onChange={(event) => {
-                setName(event.target.value);
-                if (formErrors.name) {
-                  validateForm(event.target.value, description);
-                }
-              }}
-            />
-            {formErrors.name ? (
-              <p className="text-xs text-red-500">{formErrors.name}</p>
-            ) : null}
-            <Input
-              className="max-w-md"
-              placeholder="Description"
-              value={description}
-              onChange={(event) => {
-                setDescription(event.target.value);
-                if (formErrors.description) {
-                  validateForm(name, event.target.value);
-                }
-              }}
-            />
-            {formErrors.description ? (
-              <p className="text-xs text-red-500">{formErrors.description}</p>
-            ) : null}
+      <div className="flex flex-1 flex-col relative z-10 overflow-hidden">
+        <header className="flex-shrink-0 flex items-center justify-between border-b border-forge-700 bg-forge-900/60 backdrop-blur-xl px-6 py-3 shadow-lg shadow-forge-950/20 gap-6">
+          <div className="flex items-center gap-4 min-w-0 flex-1">
+            <div className="flex flex-col gap-1">
+              <Input
+                className="w-64 bg-forge-800/40 backdrop-blur-sm border-forge-700 text-forge-100 placeholder:text-forge-400 focus:border-ember-500 focus:ring-ember-500/20"
+                placeholder="Workflow name"
+                value={name}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  if (formErrors.name) {
+                    validateForm(event.target.value, description);
+                  }
+                }}
+              />
+              {formErrors.name ? (
+                <p className="text-xs text-ember-400">{formErrors.name}</p>
+              ) : null}
+            </div>
+            <div className="flex flex-col gap-1">
+              <Input
+                className="w-80 bg-forge-800/40 backdrop-blur-sm border-forge-700 text-forge-100 placeholder:text-forge-400 focus:border-ember-500 focus:ring-ember-500/20"
+                placeholder="Description"
+                value={description}
+                onChange={(event) => {
+                  setDescription(event.target.value);
+                  if (formErrors.description) {
+                    validateForm(name, event.target.value);
+                  }
+                }}
+              />
+              {formErrors.description ? (
+                <p className="text-xs text-ember-400">{formErrors.description}</p>
+              ) : null}
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <button
+              onClick={() => setIsStatsOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-forge-700 bg-forge-800/40 backdrop-blur-sm px-4 py-2 text-sm font-semibold text-forge-200 shadow-sm transition hover:bg-forge-800 hover:border-ember-500/50 focus:outline-none focus:ring-2 focus:ring-ember-500/20"
+            >
+              Show Stats
+            </button>
+            <button
+              onClick={() => setShowMinimap(!showMinimap)}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-forge-700 bg-forge-800/40 backdrop-blur-sm px-4 py-2 text-sm font-semibold text-forge-200 shadow-sm transition hover:bg-forge-800 hover:border-ember-500/50 focus:outline-none focus:ring-2 focus:ring-ember-500/20"
+              title={showMinimap ? 'Hide Minimap' : 'Show Minimap'}
+            >
+              <MapIcon size={16} />
+              {showMinimap ? 'Hide' : 'Show'} Map
+            </button>
+            <LiquidMetalButton
               onClick={triggerManualSave}
-              icon={Save}
-              className="w-auto"
               disabled={Boolean(formErrors.name || formErrors.description)}
             >
+              <Save size={16} className="mr-2" />
               Save Workflow
-            </Button>
-            <Button
+            </LiquidMetalButton>
+            <LiquidMetalButton
               onClick={() => {
                 if (!canExecuteWorkflow || !workflowId) {
                   toast.error('Save the workflow before executing.');
@@ -871,32 +893,24 @@ const WorkflowBuilder = () => {
                 }
                 executeMutation.mutate(workflowId);
               }}
-              icon={Play}
-              className="w-auto"
               disabled={!canExecuteWorkflow || executeMutation.isPending}
             >
+              <Play size={16} className="mr-2" />
               {executeMutation.isPending ? 'Executing...' : 'Execute'}
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => setIsStatsOpen(true)}
-              className="w-auto"
-            >
-              Show Stats
-            </Button>
+            </LiquidMetalButton>
           </div>
         </header>
         {!canExecuteWorkflow ? (
-          <div className="border-b border-yellow-200 bg-yellow-50 px-6 py-3 text-sm text-yellow-800">
+          <div className="border-b border-ember-500/30 bg-ember-500/10 backdrop-blur-sm px-6 py-3 text-sm text-ember-400">
             Save the workflow before executing.
           </div>
         ) : null}
-        <div className="relative flex flex-1">
+        <div className="relative flex flex-1 overflow-hidden min-h-0">
           {isLoadingWorkflow || isManualSaving || isAutoSaving ? (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-sm">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-forge-950/80 backdrop-blur-sm">
               <div className="flex flex-col items-center gap-2">
                 <LoadingSpinner />
-                <span className="text-sm font-medium text-indigo-600">
+                <span className="text-sm font-medium text-ember-400">
                   {isLoadingWorkflow
                     ? 'Loading workflow...'
                     : isManualSaving
@@ -907,7 +921,7 @@ const WorkflowBuilder = () => {
             </div>
           ) : null}
           <div
-            className={`h-full flex-1 bg-slate-100 ${
+            className={`h-full w-full flex-1 bg-forge-900/40 backdrop-blur-sm ${
               isManualSaving ? 'pointer-events-none opacity-90' : ''
             }`}
             ref={reactFlowWrapper}
@@ -915,12 +929,12 @@ const WorkflowBuilder = () => {
             {isExecuting || overlayStatus ? (
               <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center p-3">
                 <div
-                  className={`rounded-lg px-4 py-2 text-sm font-semibold shadow-lg ${
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold shadow-lg backdrop-blur-xl border ${
                     overlayStatus === 'failed'
-                      ? 'bg-rose-100 text-rose-700'
+                      ? 'bg-red-500/20 border-red-500/50 text-red-400'
                       : overlayStatus === 'success'
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : 'bg-blue-100 text-blue-700'
+                        ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400'
+                        : 'bg-blue-500/20 border-blue-500/50 text-blue-400'
                   } ${isExecuting ? 'animate-pulse' : ''}`}
                 >
                   {overlayStatus === 'failed'
@@ -964,8 +978,8 @@ const WorkflowBuilder = () => {
               connectionLineStyle={{ stroke: '#6366f1', strokeWidth: 2, strokeDasharray: '5 5' }}
               fitView
             >
-              <Background variant={BackgroundVariant.Lines} gap={24} color="#cbd5f5" />
-              <MiniMap />
+              <Background variant={BackgroundVariant.Lines} gap={24} color="#2d1810" />
+              {showMinimap && <MiniMap />}
               <Controls position="bottom-right" />
             </ReactFlow>
           </div>
@@ -977,21 +991,21 @@ const WorkflowBuilder = () => {
       />
       {isStatsOpen ? (
         <div
-          className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+          className="fixed inset-0 z-40 flex items-center justify-center bg-forge-950/60 backdrop-blur-sm"
           onClick={() => setIsStatsOpen(false)}
         >
           <div
-            className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"
+            className="w-full max-w-lg rounded-2xl bg-forge-900/90 backdrop-blur-xl border border-forge-700 p-6 shadow-2xl shadow-forge-950/50"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-forge-50">
                 Workflow Details
               </h2>
               <button
                 type="button"
                 onClick={() => setIsStatsOpen(false)}
-                className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="rounded-full p-2 text-forge-400 transition hover:bg-forge-800 hover:text-forge-200 focus:outline-none focus:ring-2 focus:ring-ember-500/20"
               >
                 Close
               </button>

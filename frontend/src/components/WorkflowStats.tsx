@@ -45,33 +45,33 @@ const WorkflowStats = ({ workflow }: WorkflowStatsProps) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">Workflow Statistics</h2>
+        <h2 className="text-lg font-semibold text-forge-100">Workflow Statistics</h2>
         <span
           className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${
             isActive
-              ? 'bg-emerald-100 text-emerald-700'
-              : 'bg-gray-200 text-gray-600'
+              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+              : 'bg-forge-800 text-forge-400 border border-forge-700'
           }`}
         >
           {isActive ? 'Active' : 'Inactive'}
         </span>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-gray-100 bg-slate-50 p-4">
-          <p className="text-sm font-semibold text-gray-500">Total Nodes</p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{totalNodes}</p>
+        <div className="rounded-lg border border-forge-700 bg-forge-800/40 p-4">
+          <p className="text-sm font-semibold text-forge-400">Total Nodes</p>
+          <p className="mt-1 text-2xl font-bold text-forge-100">{totalNodes}</p>
         </div>
-        <div className="rounded-lg border border-gray-100 bg-slate-50 p-4">
-          <p className="text-sm font-semibold text-gray-500">Total Edges</p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{totalEdges}</p>
+        <div className="rounded-lg border border-forge-700 bg-forge-800/40 p-4">
+          <p className="text-sm font-semibold text-forge-400">Total Edges</p>
+          <p className="mt-1 text-2xl font-bold text-forge-100">{totalEdges}</p>
         </div>
-        <div className="rounded-lg border border-gray-100 bg-white p-4 sm:col-span-2">
-          <p className="text-sm font-semibold text-gray-500">Created</p>
-          <p className="mt-1 text-sm text-gray-800">{createdAt}</p>
+        <div className="rounded-lg border border-forge-700 bg-forge-800/20 p-4 sm:col-span-2">
+          <p className="text-sm font-semibold text-forge-400">Created</p>
+          <p className="mt-1 text-sm text-forge-200">{createdAt}</p>
         </div>
-        <div className="rounded-lg border border-gray-100 bg-white p-4 sm:col-span-2">
-          <p className="text-sm font-semibold text-gray-500">Last Updated</p>
-          <p className="mt-1 text-sm text-gray-800">{updatedAt}</p>
+        <div className="rounded-lg border border-forge-700 bg-forge-800/20 p-4 sm:col-span-2">
+          <p className="text-sm font-semibold text-forge-400">Last Updated</p>
+          <p className="mt-1 text-sm text-forge-200">{updatedAt}</p>
         </div>
       </div>
     </div>

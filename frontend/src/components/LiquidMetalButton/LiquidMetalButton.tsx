@@ -9,6 +9,7 @@ interface LiquidMetalButtonProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'primary' | 'secondary' | 'outline';
+  disabled?: boolean;
 }
 
 const LiquidMetalButton: React.FC<LiquidMetalButtonProps> = ({
@@ -19,6 +20,7 @@ const LiquidMetalButton: React.FC<LiquidMetalButtonProps> = ({
   className = '',
   size = 'md',
   variant = 'primary',
+  disabled = false,
 }) => {
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -129,8 +131,8 @@ const LiquidMetalButton: React.FC<LiquidMetalButtonProps> = ({
 
   const baseClasses = `
     group relative inline-flex items-center justify-center overflow-hidden rounded-xl
-    cursor-pointer transition-all duration-300 ease-out
-    hover:scale-[1.03] active:scale-[0.98]
+    ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:scale-[1.03] active:scale-[0.98]'}
+    transition-all duration-300 ease-out
     ${sizeClasses[size]} ${className}
   `.trim().replace(/\s+/g, ' ');
 
@@ -193,14 +195,19 @@ const LiquidMetalButton: React.FC<LiquidMetalButtonProps> = ({
   return (
     <button 
       className={baseClasses} 
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       style={style}
       onMouseEnter={(e) => {
-        handleMouseEnter();
-        Object.assign(e.currentTarget.style, hoverStyle);
+        if (!disabled) {
+          handleMouseEnter();
+          Object.assign(e.currentTarget.style, hoverStyle);
+        }
       }}
       onMouseLeave={(e) => {
-        Object.assign(e.currentTarget.style, style);
+        if (!disabled) {
+          Object.assign(e.currentTarget.style, style);
+        }
       }}
     >
       {buttonContent}

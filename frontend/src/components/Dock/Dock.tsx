@@ -162,7 +162,7 @@ export default function Dock({
           isHovered.set(0);
           mouseX.set(Infinity);
         }}
-        className={`${className} fixed bottom-4 left-1/2 transform -translate-x-1/2 flex items-center w-fit gap-4 rounded-2xl border-forge-700 border-2 bg-forge-950/60 backdrop-blur-xl py-2 px-4 shadow-2xl pointer-events-auto`}
+        className={`${className} fixed bottom-4 left-1/2 transform -translate-x-1/2 flex items-center w-fit gap-4 rounded-2xl border-forge-700 border-2 bg-forge-950/60 backdrop-blur-xl py-2 px-4 shadow-2xl pointer-events-auto z-[100]`}
         style={{ height }}
         role="toolbar"
         aria-label="Application dock"

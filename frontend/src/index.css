@@ -8,6 +8,7 @@ body {
   font-family: 'Outfit', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #0a0908;
 }
 
 /* === WARM FORGE DESIGN SYSTEM === */

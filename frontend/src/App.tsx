@@ -68,7 +68,7 @@ const App: React.FC = () => {
 
   return (
     <>
-      <main className={isLandingPage || isAuthPage ? '' : 'min-h-[calc(100vh-4rem)] bg-gray-50'}>
+      <main className={isLandingPage || isAuthPage ? '' : 'min-h-screen bg-forge-950'}>
         <ErrorBoundary>
           <Routes>
             <Route path="/" element={<LandingPage />} />

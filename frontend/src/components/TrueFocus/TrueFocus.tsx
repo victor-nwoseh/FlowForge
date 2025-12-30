@@ -10,6 +10,7 @@ interface TrueFocusProps {
   glowColor?: string;
   animationDuration?: number;
   pauseBetweenAnimations?: number;
+  fontSize?: string;
 }
 
 interface FocusRect {
@@ -27,7 +28,8 @@ const TrueFocus: React.FC<TrueFocusProps> = ({
   borderColor = 'green',
   glowColor = 'rgba(0, 255, 0, 0.6)',
   animationDuration = 0.5,
-  pauseBetweenAnimations = 1
+  pauseBetweenAnimations = 1,
+  fontSize = '3rem'
 }) => {
   const words = sentence.split(separator);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -62,7 +64,7 @@ const TrueFocus: React.FC<TrueFocusProps> = ({
       width: activeRect.width,
       height: activeRect.height
     });
-  }, [currentIndex, words.length]);
+  }, [currentIndex, words.length, sentence]); // Added sentence to dependencies if logo changes
 
   const handleMouseEnter = (index: number) => {
     if (manualMode) {
@@ -91,9 +93,10 @@ const TrueFocus: React.FC<TrueFocusProps> = ({
             ref={el => {
               wordRefs.current[index] = el;
             }}
-            className="relative text-[3rem] font-black cursor-pointer"
+            className="relative font-black cursor-pointer"
             style={
               {
+                fontSize: fontSize,
                 filter: manualMode
                   ? isActive
                     ? `blur(0px)`

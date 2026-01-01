@@ -124,6 +124,7 @@ const WorkflowBuilder = () => {
   const autoSaveTimeoutRef = useRef<number | null>(null);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [showMinimap, setShowMinimap] = useState(true);
+  const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
   const [formErrors, setFormErrors] = useState<{ name?: string; description?: string }>({});
   const canExecuteWorkflow = Boolean(workflowId && workflowId !== 'new');
   const { executionStarted, nodeCompleted, executionCompleted, progress } =
@@ -826,7 +827,10 @@ const WorkflowBuilder = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-forge-950/30 to-forge-950/80 pointer-events-none" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full bg-ember-500/5 blur-[100px] pointer-events-none" />
       
-      <NodePalette />
+      <NodePalette
+        isCollapsed={isPaletteCollapsed}
+        onToggle={() => setIsPaletteCollapsed(!isPaletteCollapsed)}
+      />
       <div className="flex flex-1 flex-col relative z-10 overflow-hidden">
         <header className="flex-shrink-0 flex items-center justify-between border-b border-forge-700 bg-forge-900/60 backdrop-blur-xl px-6 py-3 shadow-lg shadow-forge-950/20 gap-6">
           <div className="flex items-center gap-4 min-w-0 flex-1">

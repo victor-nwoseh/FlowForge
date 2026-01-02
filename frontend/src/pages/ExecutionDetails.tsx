@@ -18,10 +18,10 @@ import useExecutionSocket from '../hooks/useExecutionSocket';
 import toast from 'react-hot-toast';
 
 const statusColorMap = {
-  success: 'text-emerald-600 bg-emerald-50',
-  failed: 'text-rose-600 bg-rose-50',
-  running: 'text-sky-600 bg-sky-50',
-  pending: 'text-slate-500 bg-slate-100',
+  success: 'text-emerald-400 bg-emerald-500/15 border border-emerald-500/30',
+  failed: 'text-red-400 bg-red-500/15 border border-red-500/30',
+  running: 'text-amber-400 bg-amber-500/15 border border-amber-500/30 animate-pulse',
+  pending: 'text-forge-400 bg-forge-700/50 border border-forge-600/30',
 };
 
 const statusIconMap = {
@@ -64,21 +64,21 @@ const CollapsibleJson = ({
   );
 
   return (
-    <div className="rounded-lg border border-gray-100 bg-slate-50">
+    <div className="rounded-lg border border-forge-700/30 bg-forge-800/40">
       <button
         type="button"
-        className="flex w-full items-center justify-between px-4 py-2 text-left text-sm font-medium text-gray-800"
+        className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm font-medium text-forge-200 hover:bg-forge-700/30 rounded-lg transition-colors"
         onClick={() => setIsOpen((prev) => !prev)}
       >
         <span>{label}</span>
         {isOpen ? (
-          <ChevronDown className="h-4 w-4 text-gray-500" />
+          <ChevronDown className="h-4 w-4 text-forge-400" />
         ) : (
-          <ChevronRight className="h-4 w-4 text-gray-500" />
+          <ChevronRight className="h-4 w-4 text-forge-400" />
         )}
       </button>
       {isOpen ? (
-        <pre className="max-h-64 overflow-auto px-4 pb-4 text-xs text-gray-700">
+        <pre className="max-h-64 overflow-auto px-4 pb-4 text-xs text-forge-300 font-mono">
           {content}
         </pre>
       ) : null}
@@ -155,8 +155,8 @@ const ExecutionDetails = () => {
 
   if (isError || !execution) {
     return (
-      <div className="flex h-full items-center justifycenter px-4">
-        <div className="rounded-lg border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-600">
+      <div className="flex h-full items-center justify-center px-4">
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-6 py-4 text-sm text-red-300">
           Failed to load execution details. Please try again later.
         </div>
       </div>
@@ -168,21 +168,21 @@ const ExecutionDetails = () => {
 
   return (
     <div className="p-6">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <button
             type="button"
-            className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-indigo-600 transition hover:text-indigo-700"
+            className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-ember-400 transition-colors hover:text-ember-300"
             onClick={() => navigate('/executions')}
           >
             <ArrowLeft className="h-4 w-4" />
             Back to executions
           </button>
-          <h1 className="text-2xl font-semibold text-gray-900">
+          <h1 className="text-2xl font-semibold text-forge-50">
             Execution Details
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Workflow ID: {execution.workflowId}
+          <p className="mt-1 text-sm text-forge-400">
+            Workflow ID: <code className="px-2 py-0.5 rounded bg-forge-800/60 text-forge-300 font-mono text-xs">{execution.workflowId}</code>
           </p>
         </div>
         <div className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${statusConfig}`}>
@@ -191,62 +191,62 @@ const ExecutionDetails = () => {
         </div>
       </div>
 
-      <div className="mb-6 grid gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm md:grid-cols-4">
+      <div className="mb-6 grid gap-4 rounded-2xl border border-forge-700/50 bg-forge-900/80 backdrop-blur-xl p-6 shadow-2xl shadow-black/20 md:grid-cols-4">
         <div>
-          <p className="text-xs uppercase text-gray-500">Started</p>
-          <p className="mt-1 font-semibold text-gray-900">
+          <p className="text-xs uppercase tracking-wider text-forge-500">Started</p>
+          <p className="mt-1.5 font-semibold text-forge-50">
             {formatDateTime(execution.startTime ?? execution.createdAt)}
           </p>
         </div>
         <div>
-          <p className="text-xs uppercase text-gray-500">Ended</p>
-          <p className="mt-1 font-semibold text-gray-900">
+          <p className="text-xs uppercase tracking-wider text-forge-500">Ended</p>
+          <p className="mt-1.5 font-semibold text-forge-50">
             {formatDateTime(execution.endTime)}
           </p>
         </div>
         <div>
-          <p className="text-xs uppercase text-gray-500">Duration</p>
-          <p className="mt-1 font-semibold text-gray-900">
+          <p className="text-xs uppercase tracking-wider text-forge-500">Duration</p>
+          <p className="mt-1.5 font-semibold text-forge-50 font-mono">
             {execution.status === 'running'
               ? 'In progress'
               : formatDuration(execution.duration)}
           </p>
         </div>
         <div>
-          <p className="text-xs uppercase text-gray-500">Triggered by</p>
-          <p className="mt-1 font-semibold text-gray-900 capitalize">
+          <p className="text-xs uppercase tracking-wider text-forge-500">Triggered by</p>
+          <p className="mt-1.5 font-semibold text-forge-50 capitalize">
             {execution.triggerSource ?? execution.triggerData?.source ?? 'manual'}
           </p>
         </div>
       </div>
 
       {execution.error ? (
-        <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-          <div className="flex items-center gap-2 font-semibold">
-            <AlertCircle className="h-4 w-4" />
+        <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+          <div className="flex items-center gap-2 font-semibold text-red-200">
+            <AlertCircle className="h-4 w-4 text-red-400" />
             Execution Error
           </div>
-          <p className="mt-2 text-rose-800">{execution.error}</p>
+          <p className="mt-2 text-red-300">{execution.error}</p>
         </div>
       ) : null}
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-forge-700/50 bg-forge-900/80 backdrop-blur-xl p-6 shadow-2xl shadow-black/20">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold text-gray-900">Node Logs</h2>
+          <h2 className="text-lg font-semibold text-forge-50">Node Logs</h2>
             {liveStatus === 'running' ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 animate-pulse">
-                🔵 Executing...
+              <span className="inline-flex items-center gap-2 rounded-full bg-ember-500/15 border border-ember-500/30 px-3 py-1 text-xs font-semibold text-ember-300 animate-pulse">
+                Executing...
               </span>
             ) : null}
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-forge-400">
             {execution.logs.length} steps
             {progress && (
-              <div className="mt-1 flex items-center gap-2 text-xs text-indigo-700">
-                <div className="h-2 w-32 overflow-hidden rounded-full bg-indigo-100">
+              <div className="mt-1 flex items-center gap-2 text-xs text-ember-300">
+                <div className="h-2 w-32 overflow-hidden rounded-full bg-forge-700/50">
                   <div
-                    className="h-2 bg-gradient-to-r from-indigo-500 to-indigo-400 transition-all"
+                    className="h-2 bg-gradient-to-r from-ember-500 to-ember-400 transition-all"
                     style={{ width: `${Math.min(progress.percentage, 100)}%` }}
                   />
                 </div>
@@ -259,7 +259,7 @@ const ExecutionDetails = () => {
         </div>
 
         {execution.logs.length === 0 ? (
-          <p className="text-sm text-gray-500">No node logs available.</p>
+          <p className="text-sm text-forge-400">No node logs available.</p>
         ) : (
           <ul className="space-y-4">
             {execution.logs.map((log: NodeExecutionLog, index: number) => {
@@ -275,66 +275,66 @@ const ExecutionDetails = () => {
               return (
                 <li
                   key={`${log.nodeId}-${log.startTime}`}
-                  className={`rounded-2xl border bg-slate-50 p-4 ${
+                  className={`rounded-2xl border bg-forge-800/60 p-4 transition-all duration-200 ${
                     tookBranch
                       ? log.branchTaken === 'true'
-                        ? 'border-emerald-200'
-                        : 'border-rose-200'
-                      : 'border-gray-100'
+                        ? 'border-l-2 border-l-emerald-500 border-t-forge-700/50 border-r-forge-700/50 border-b-forge-700/50'
+                        : 'border-l-2 border-l-red-500 border-t-forge-700/50 border-r-forge-700/50 border-b-forge-700/50'
+                      : 'border-forge-700/50'
                   }`}
                 >
                   <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                     <div>
-                      <div className="flex items-center gap-2 text-base font-semibold text-gray-900">
+                      <div className="flex items-center gap-2 text-base font-semibold text-forge-50">
                         <LogIcon
                           className={`h-4 w-4 ${
-                            isSuccess ? 'text-emerald-600' : 'text-rose-600'
+                            isSuccess ? 'text-emerald-400' : 'text-red-400'
                           } ${isLiveRunning ? 'animate-pulse' : ''}`}
                         />
                         <span>
-                          {log.nodeId} ({log.nodeType})
+                          {log.nodeId} <span className="text-forge-400 font-normal">({log.nodeType})</span>
                         </span>
                         {isLiveRunning && (
-                          <span className="text-xs font-semibold text-indigo-600 animate-pulse">
+                          <span className="text-xs font-semibold text-ember-400 animate-pulse">
                             running...
                           </span>
                         )}
                         {isLiveDoneSuccess && (
-                          <span className="text-xs font-semibold text-emerald-600">
+                          <span className="text-xs font-semibold text-emerald-400">
                             updated
                           </span>
                         )}
                         {isLiveDoneFailed && (
-                          <span className="text-xs font-semibold text-rose-600">
+                          <span className="text-xs font-semibold text-red-400">
                             updated
                           </span>
                         )}
                       </div>
                       {log.branchTaken ? (
-                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
                         <span
-                            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
+                            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold border ${
                             log.branchTaken === 'true'
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : 'bg-rose-100 text-rose-700'
+                              ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                              : 'bg-red-500/15 text-red-400 border-red-500/30'
                           }`}
                         >
                           {log.branchTaken === 'true' ? '✓ True Path' : '✗ False Path'}
                         </span>
                           {nextLog ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-forge-700/50 px-2.5 py-1 text-[11px] font-semibold text-forge-400">
                               <GitBranch className="h-3 w-3" />
                               {`Next: ${nextLog.nodeId} (${nextLog.nodeType})`}
                             </span>
                           ) : null}
                         </div>
                       ) : null}
-                      <p className="text-xs uppercase text-gray-500">
+                      <p className="mt-1 text-xs uppercase tracking-wider text-forge-500">
                         Attempt {log.attemptNumber ?? 1} • Started{' '}
                         {formatDateTime(log.startTime)}
                       </p>
                     </div>
-                    <div className="text-sm font-medium text-gray-700">
+                    <div className="text-sm font-medium text-forge-300 font-mono">
                       Duration: {formatDuration(log.duration)}
                     </div>
                   </div>
@@ -345,7 +345,7 @@ const ExecutionDetails = () => {
                   </div>
 
                   {log.error ? (
-                    <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">
+                    <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-300">
                       {log.error}
                     </div>
                   ) : null}

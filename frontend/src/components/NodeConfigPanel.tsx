@@ -4,8 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import cronstrue from 'cronstrue';
 
-import Button from './Button';
-import Input from './Input';
 import { useWorkflowStore } from '../store/workflow.store';
 import api from '../services/api';
 
@@ -216,15 +214,15 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
     if (connected) return null;
 
     return (
-      <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
-        <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+      <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
+        <AlertCircle className="h-5 w-5 text-amber-400 flex-shrink-0" />
         <div className="flex-1">
-          <p className="text-sm text-amber-800">{message}</p>
+          <p className="text-sm text-amber-200">{message}</p>
           <button
             onClick={() => (window.location.href = '/integrations')}
-            className="mt-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+            className="mt-2 text-sm font-medium text-ember-300 hover:text-ember-200 transition-colors"
           >
-            Go to Integrations
+            Go to Integrations →
           </button>
         </div>
       </div>
@@ -269,61 +267,71 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
         return (
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-700">Trigger Type</label>
-              <div className="mt-2 flex items-center gap-4">
-                <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                  <input
-                    type="radio"
-                    name="triggerType"
-                    value="manual"
-                    checked={triggerType === 'manual'}
-                    onChange={() => setTriggerType('manual')}
-                  />
-                  Manual Trigger
+              <label className="text-sm font-medium text-forge-200">Trigger Type</label>
+              <div className="mt-3 flex items-center gap-6">
+                <label className="inline-flex items-center gap-2.5 text-sm text-forge-300 cursor-pointer group">
+                  <div className="relative">
+                    <input
+                      type="radio"
+                      name="triggerType"
+                      value="manual"
+                      checked={triggerType === 'manual'}
+                      onChange={() => setTriggerType('manual')}
+                      className="sr-only peer"
+                    />
+                    <div className="w-4 h-4 rounded-full border-2 border-forge-600 peer-checked:border-ember-400 peer-checked:bg-ember-400 transition-all duration-200 group-hover:border-forge-500"></div>
+                    <div className="absolute inset-0 w-4 h-4 rounded-full peer-checked:bg-ember-400 scale-50 opacity-0 peer-checked:opacity-100 transition-all duration-200"></div>
+                  </div>
+                  <span className="group-hover:text-forge-200 transition-colors">Manual Trigger</span>
                 </label>
-                <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                  <input
-                    type="radio"
-                    name="triggerType"
-                    value="scheduled"
-                    checked={triggerType === 'scheduled'}
-                    onChange={() => setTriggerType('scheduled')}
-                  />
-                  Scheduled Trigger
+                <label className="inline-flex items-center gap-2.5 text-sm text-forge-300 cursor-pointer group">
+                  <div className="relative">
+                    <input
+                      type="radio"
+                      name="triggerType"
+                      value="scheduled"
+                      checked={triggerType === 'scheduled'}
+                      onChange={() => setTriggerType('scheduled')}
+                      className="sr-only peer"
+                    />
+                    <div className="w-4 h-4 rounded-full border-2 border-forge-600 peer-checked:border-ember-400 peer-checked:bg-ember-400 transition-all duration-200 group-hover:border-forge-500"></div>
+                    <div className="absolute inset-0 w-4 h-4 rounded-full peer-checked:bg-ember-400 scale-50 opacity-0 peer-checked:opacity-100 transition-all duration-200"></div>
+                  </div>
+                  <span className="group-hover:text-forge-200 transition-colors">Scheduled Trigger</span>
                 </label>
               </div>
             </div>
 
             {triggerType === 'scheduled' && (
-              <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Cron Expression</label>
+              <div className="space-y-3 rounded-lg border border-forge-700/50 bg-forge-800/40 p-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-forge-200">Cron Expression</label>
                   <input
                     type="text"
                     value={cronExpression}
                     onChange={(e) => setCronExpression(e.target.value)}
                     placeholder="0 9 * * *"
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                    className="w-full rounded-lg border border-forge-700/50 bg-forge-800/60 px-3 py-2.5 text-sm text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:outline-none focus:ring-1 focus:ring-ember-500/20 transition-all duration-200"
                   />
                   {!cronExpression.trim().match(/^\S+\s+\S+\s+\S+\s+\S+\s+\S+$/) && (
-                    <p className="text-xs text-red-500">
+                    <p className="text-xs text-red-400">
                       Invalid format. Cron needs 5 parts: minute hour day month weekday.
                     </p>
                   )}
                   {describeCron(cronExpression) && (
-                    <p className="text-xs text-gray-600">Schedule: {describeCron(cronExpression)}</p>
+                    <p className="text-xs text-ember-300/80">Schedule: {describeCron(cronExpression)}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-gray-700">Presets</p>
+                  <p className="text-xs font-medium text-forge-300">Presets</p>
                   <div className="flex flex-wrap gap-2">
                     {CRON_PRESETS.map((preset) => (
                       <button
                         key={preset.label}
                         type="button"
                         onClick={() => setCronExpression(preset.value)}
-                        className="rounded border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:border-indigo-400 hover:text-indigo-600"
+                        className="rounded-md border border-forge-600/50 bg-forge-800 px-3 py-1.5 text-xs text-forge-300 hover:border-ember-500/40 hover:text-ember-300 hover:bg-forge-700/50 transition-all duration-200"
                       >
                         {preset.label}
                       </button>
@@ -331,13 +339,13 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
                   </div>
                 </div>
 
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-forge-400">
                   Cron format: minute hour day month weekday. Need help?{' '}
                   <a
                     href="https://crontab.guru"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-indigo-600 hover:underline"
+                    className="text-ember-300 hover:text-ember-200 hover:underline transition-colors"
                   >
                     crontab.guru
                   </a>
@@ -360,7 +368,7 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
                 'Warning: Gmail not connected. Connect in Integrations to use this node.',
               )}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-forge-200">
                 Action Type
               </label>
               <select
@@ -368,33 +376,34 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
                 onChange={(event) =>
                   handleConfigChange('actionType', event.target.value)
                 }
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                className="w-full rounded-lg border border-forge-700/50 bg-forge-800/60 px-3 py-2.5 text-sm text-forge-50 focus:border-ember-500/50 focus:outline-none focus:ring-1 focus:ring-ember-500/20 transition-all duration-200 cursor-pointer"
               >
                 {ACTION_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
+                  <option key={option.value} value={option.value} className="bg-forge-800 text-forge-50">
                     {option.label}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-forge-200">
                 Webhook URL
               </label>
-              <Input
+              <input
                 placeholder="https://example.com/webhook"
                 value={config.webhookUrl || ''}
                 onChange={(event) =>
                   handleConfigChange('webhookUrl', event.target.value)
                 }
+                className="w-full px-4 py-2.5 bg-forge-800/60 border border-forge-700/50 rounded-lg text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:ring-1 focus:ring-ember-500/20 focus:outline-none transition-all duration-200"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-forge-200">
                 Message
               </label>
               <textarea
-                className="h-24 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                className="h-24 w-full rounded-lg border border-forge-700/50 bg-forge-800/60 px-3 py-2.5 text-sm text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:outline-none focus:ring-1 focus:ring-ember-500/20 transition-all duration-200 resize-none"
                 placeholder="Enter message content..."
                 value={config.message || ''}
                 onChange={(event) =>
@@ -408,17 +417,18 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Channel</label>
-              <Input
+              <label className="text-sm font-medium text-forge-200">Channel</label>
+              <input
                 placeholder="#general"
                 value={config.channel || ''}
                 onChange={(event) => handleConfigChange('channel', event.target.value)}
+                className="w-full px-4 py-2.5 bg-forge-800/60 border border-forge-700/50 rounded-lg text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:ring-1 focus:ring-ember-500/20 focus:outline-none transition-all duration-200"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Message</label>
+              <label className="text-sm font-medium text-forge-200">Message</label>
               <textarea
-                className="h-24 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                className="h-24 w-full rounded-lg border border-forge-700/50 bg-forge-800/60 px-3 py-2.5 text-sm text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:outline-none focus:ring-1 focus:ring-ember-500/20 transition-all duration-200 resize-none"
                 placeholder="Enter message content..."
                 value={config.message || ''}
                 onChange={(event) => handleConfigChange('message', event.target.value)}
@@ -430,25 +440,27 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">To</label>
-              <Input
+              <label className="text-sm font-medium text-forge-200">To</label>
+              <input
                 placeholder="user@example.com"
                 value={config.to || ''}
                 onChange={(event) => handleConfigChange('to', event.target.value)}
+                className="w-full px-4 py-2.5 bg-forge-800/60 border border-forge-700/50 rounded-lg text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:ring-1 focus:ring-ember-500/20 focus:outline-none transition-all duration-200"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Subject</label>
-              <Input
+              <label className="text-sm font-medium text-forge-200">Subject</label>
+              <input
                 placeholder="Subject"
                 value={config.subject || ''}
                 onChange={(event) => handleConfigChange('subject', event.target.value)}
+                className="w-full px-4 py-2.5 bg-forge-800/60 border border-forge-700/50 rounded-lg text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:ring-1 focus:ring-ember-500/20 focus:outline-none transition-all duration-200"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Body</label>
+              <label className="text-sm font-medium text-forge-200">Body</label>
               <textarea
-                className="h-24 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                className="h-24 w-full rounded-lg border border-forge-700/50 bg-forge-800/60 px-3 py-2.5 text-sm text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:outline-none focus:ring-1 focus:ring-ember-500/20 transition-all duration-200 resize-none"
                 placeholder="Email body..."
                 value={config.body || ''}
                 onChange={(event) => handleConfigChange('body', event.target.value)}
@@ -460,37 +472,39 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Spreadsheet ID</label>
-              <Input
+              <label className="text-sm font-medium text-forge-200">Spreadsheet ID</label>
+              <input
                 placeholder="Spreadsheet ID"
                 value={config.spreadsheetId || ''}
                 onChange={(event) => handleConfigChange('spreadsheetId', event.target.value)}
+                className="w-full px-4 py-2.5 bg-forge-800/60 border border-forge-700/50 rounded-lg text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:ring-1 focus:ring-ember-500/20 focus:outline-none transition-all duration-200"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Range</label>
-              <Input
+              <label className="text-sm font-medium text-forge-200">Range</label>
+              <input
                 placeholder="Sheet1!A1:B2"
                 value={config.range || ''}
                 onChange={(event) => handleConfigChange('range', event.target.value)}
+                className="w-full px-4 py-2.5 bg-forge-800/60 border border-forge-700/50 rounded-lg text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:ring-1 focus:ring-ember-500/20 focus:outline-none transition-all duration-200"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Operation</label>
+              <label className="text-sm font-medium text-forge-200">Operation</label>
               <select
                 value={config.operation || 'read'}
                 onChange={(event) => handleConfigChange('operation', event.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                className="w-full rounded-lg border border-forge-700/50 bg-forge-800/60 px-3 py-2.5 text-sm text-forge-50 focus:border-ember-500/50 focus:outline-none focus:ring-1 focus:ring-ember-500/20 transition-all duration-200 cursor-pointer"
               >
-                <option value="read">Read</option>
-                <option value="write">Write</option>
+                <option value="read" className="bg-forge-800 text-forge-50">Read</option>
+                <option value="write" className="bg-forge-800 text-forge-50">Write</option>
               </select>
             </div>
             {config.operation === 'write' && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Values (JSON 2D array)</label>
+                <label className="text-sm font-medium text-forge-200">Values (JSON 2D array)</label>
                 <textarea
-                  className="h-24 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  className="h-24 w-full rounded-lg border border-forge-700/50 bg-forge-800/60 px-3 py-2.5 text-sm text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:outline-none focus:ring-1 focus:ring-ember-500/20 transition-all duration-200 resize-none font-mono"
                   placeholder='e.g., [["a","b"],["c","d"]]'
                   value={config.values || ''}
                   onChange={(event) => handleConfigChange('values', event.target.value)}
@@ -502,11 +516,11 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
       case 'condition':
         return (
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-forge-200">
               Condition Expression
             </label>
             <textarea
-              className="h-24 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              className="h-24 w-full rounded-lg border border-forge-700/50 bg-forge-800/60 px-3 py-2.5 text-sm text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:outline-none focus:ring-1 focus:ring-ember-500/20 transition-all duration-200 resize-none font-mono"
               placeholder="e.g., data.value > 10"
               value={config.expression || ''}
               onChange={(event) =>
@@ -519,24 +533,26 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Key</label>
-              <Input
+              <label className="text-sm font-medium text-forge-200">Key</label>
+              <input
                 placeholder="count"
                 value={config.key || ''}
                 onChange={(event) => handleConfigChange('key', event.target.value)}
+                className="w-full px-4 py-2.5 bg-forge-800/60 border border-forge-700/50 rounded-lg text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:ring-1 focus:ring-ember-500/20 focus:outline-none transition-all duration-200"
               />
-              <p className="text-xs text-gray-500">
-                Reference this value in other nodes with {'{{variable.key}}'}.
+              <p className="text-xs text-forge-400">
+                Reference this value in other nodes with <code className="px-1.5 py-0.5 rounded bg-forge-800 text-ember-300 font-mono">{'{{variable.key}}'}</code>
               </p>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Value</label>
-              <Input
+              <label className="text-sm font-medium text-forge-200">Value</label>
+              <input
                 placeholder="15"
                 value={config.value ?? ''}
                 onChange={(event) => handleConfigChange('value', event.target.value)}
+                className="w-full px-4 py-2.5 bg-forge-800/60 border border-forge-700/50 rounded-lg text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:ring-1 focus:ring-ember-500/20 focus:outline-none transition-all duration-200"
               />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-forge-400">
                 Strings, numbers, booleans, or JSON are supported; stored as provided.
               </p>
             </div>
@@ -545,44 +561,52 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
       case 'loop':
         return (
           <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Array Source</label>
-              <div className="flex flex-wrap gap-4">
-                <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                  <input
-                    type="radio"
-                    name="loopSource"
-                    value="node"
-                    checked={loopSourceType === 'node'}
-                    onChange={() =>
-                      setConfig((prev) => ({
-                        ...prev,
-                        arraySource:
-                          prev.arraySource && prev.arraySource.toString().startsWith('node_')
-                            ? prev.arraySource
-                            : '',
-                      }))
-                    }
-                  />
-                  Previous node output
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-forge-200">Array Source</label>
+              <div className="flex flex-wrap gap-6">
+                <label className="inline-flex items-center gap-2.5 text-sm text-forge-300 cursor-pointer group">
+                  <div className="relative">
+                    <input
+                      type="radio"
+                      name="loopSource"
+                      value="node"
+                      checked={loopSourceType === 'node'}
+                      onChange={() =>
+                        setConfig((prev) => ({
+                          ...prev,
+                          arraySource:
+                            prev.arraySource && prev.arraySource.toString().startsWith('node_')
+                              ? prev.arraySource
+                              : '',
+                        }))
+                      }
+                      className="sr-only peer"
+                    />
+                    <div className="w-4 h-4 rounded-full border-2 border-forge-600 peer-checked:border-ember-400 peer-checked:bg-ember-400 transition-all duration-200 group-hover:border-forge-500"></div>
+                  </div>
+                  <span className="group-hover:text-forge-200 transition-colors">Previous node output</span>
                 </label>
-                <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                  <input
-                    type="radio"
-                    name="loopSource"
-                    value="variable"
-                    checked={loopSourceType === 'variable'}
-                    onChange={() =>
-                      setConfig((prev) => ({
-                        ...prev,
-                        arraySource:
-                          prev.arraySource && !prev.arraySource.toString().startsWith('node_')
-                            ? prev.arraySource
-                            : '',
-                      }))
-                    }
-                  />
-                  Variable
+                <label className="inline-flex items-center gap-2.5 text-sm text-forge-300 cursor-pointer group">
+                  <div className="relative">
+                    <input
+                      type="radio"
+                      name="loopSource"
+                      value="variable"
+                      checked={loopSourceType === 'variable'}
+                      onChange={() =>
+                        setConfig((prev) => ({
+                          ...prev,
+                          arraySource:
+                            prev.arraySource && !prev.arraySource.toString().startsWith('node_')
+                              ? prev.arraySource
+                              : '',
+                        }))
+                      }
+                      className="sr-only peer"
+                    />
+                    <div className="w-4 h-4 rounded-full border-2 border-forge-600 peer-checked:border-ember-400 peer-checked:bg-ember-400 transition-all duration-200 group-hover:border-forge-500"></div>
+                  </div>
+                  <span className="group-hover:text-forge-200 transition-colors">Variable</span>
                 </label>
               </div>
               {loopSourceType === 'node' ? (
@@ -596,24 +620,24 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
                     onChange={(e) =>
                       handleConfigChange('arraySource', e.target.value || '')
                     }
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                    className="w-full rounded-lg border border-forge-700/50 bg-forge-800/60 px-3 py-2.5 text-sm text-forge-50 focus:border-ember-500/50 focus:outline-none focus:ring-1 focus:ring-ember-500/20 transition-all duration-200 cursor-pointer"
                   >
-                    <option value="">Select previous node output</option>
+                    <option value="" className="bg-forge-800 text-forge-400">Select previous node output</option>
                     {nodes
                       .filter((n) => n.id !== selectedNode?.id)
                       .map((n) => (
-                        <option key={n.id} value={`${n.id}.output`}>
+                        <option key={n.id} value={`${n.id}.output`} className="bg-forge-800 text-forge-50">
                           {`${n.data.label || n.id} (${n.id}.output)`}
                         </option>
                       ))}
                   </select>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-forge-400">
                     Picks the selected node&apos;s output (ensure it is an array).
                   </p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <Input
+                  <input
                     placeholder="myArray"
                     value={
                       config.arraySource && !config.arraySource.toString().startsWith('node_')
@@ -621,50 +645,52 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
                         : ''
                     }
                     onChange={(event) => handleConfigChange('arraySource', event.target.value)}
+                    className="w-full px-4 py-2.5 bg-forge-800/60 border border-forge-700/50 rounded-lg text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:ring-1 focus:ring-ember-500/20 focus:outline-none transition-all duration-200"
                   />
-                  <p className="text-xs text-gray-500">
-                    Provide a variable name; accessible as {'{{variable.myArray}}'}.
+                  <p className="text-xs text-forge-400">
+                    Provide a variable name; accessible as <code className="px-1.5 py-0.5 rounded bg-forge-800 text-ember-300 font-mono">{'{{variable.myArray}}'}</code>
                   </p>
                 </div>
               )}
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Item variable name</label>
-              <Input
+              <label className="text-sm font-medium text-forge-200">Item variable name</label>
+              <input
                 placeholder="item"
                 value={config.loopVariable || 'item'}
                 onChange={(event) => handleConfigChange('loopVariable', event.target.value)}
+                className="w-full px-4 py-2.5 bg-forge-800/60 border border-forge-700/50 rounded-lg text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:ring-1 focus:ring-ember-500/20 focus:outline-none transition-all duration-200"
               />
-              <p className="text-xs text-gray-500">
-                Access current item as {'{{loop.item}}'} (or your chosen name).
+              <p className="text-xs text-forge-400">
+                Access current item as <code className="px-1.5 py-0.5 rounded bg-forge-800 text-ember-300 font-mono">{'{{loop.item}}'}</code> (or your chosen name).
               </p>
             </div>
 
-            <div className="space-y-2 rounded-lg border border-indigo-100 bg-indigo-50 p-3 text-xs text-indigo-700">
-              <p className="font-semibold">Usage examples</p>
-              <ul className="list-disc pl-4">
-                <li>Current item: {'{{loop.item}}'}</li>
-                <li>Index: {'{{loop.index}}'}</li>
-                <li>Total count: {'{{loop.count}}'}</li>
+            <div className="space-y-2 rounded-lg border border-ember-500/20 bg-ember-500/10 p-4 text-xs">
+              <p className="font-semibold text-ember-200">Usage examples</p>
+              <ul className="list-disc pl-4 text-ember-300/80 space-y-1">
+                <li>Current item: <code className="px-1 py-0.5 rounded bg-forge-900/50 text-ember-300 font-mono">{'{{loop.item}}'}</code></li>
+                <li>Index: <code className="px-1 py-0.5 rounded bg-forge-900/50 text-ember-300 font-mono">{'{{loop.index}}'}</code></li>
+                <li>Total count: <code className="px-1 py-0.5 rounded bg-forge-900/50 text-ember-300 font-mono">{'{{loop.count}}'}</code></li>
               </ul>
-              <p className="mt-2 text-indigo-600">
+              <p className="mt-2 text-ember-300/70">
                 Example: if array is ['a','b','c'], loop.item will be 'a', then 'b', then 'c'.
               </p>
             </div>
 
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
+            <div className="rounded-lg border border-forge-700/50 bg-forge-800/40 p-4 text-xs text-forge-300">
               <p>
                 Loop over:{' '}
-                <span className="font-semibold">
+                <code className="px-1.5 py-0.5 rounded bg-forge-900/50 text-ember-300 font-mono font-semibold">
                   {config.arraySource || '{{variable.myArray}}'}
-                </span>
+                </code>
               </p>
-              <p>
+              <p className="mt-1">
                 Each item accessible as:{' '}
-                <span className="font-semibold">
+                <code className="px-1.5 py-0.5 rounded bg-forge-900/50 text-ember-300 font-mono font-semibold">
                   {`{{loop.${config.loopVariable || 'item'}}}`}
-                </span>
+                </code>
               </p>
             </div>
           </div>
@@ -673,50 +699,54 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
         return (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Left side</label>
-              <Input
+              <label className="text-sm font-medium text-forge-200">Left side</label>
+              <input
                 placeholder="{{variable.count}}"
                 value={config.condition || ''}
                 onChange={(event) => handleConfigChange('condition', event.target.value)}
+                className="w-full px-4 py-2.5 bg-forge-800/60 border border-forge-700/50 rounded-lg text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:ring-1 focus:ring-ember-500/20 focus:outline-none transition-all duration-200 font-mono"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Operator</label>
+              <label className="text-sm font-medium text-forge-200">Operator</label>
               <select
                 value={config.operator || '=='}
                 onChange={(event) => handleConfigChange('operator', event.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                className="w-full rounded-lg border border-forge-700/50 bg-forge-800/60 px-3 py-2.5 text-sm text-forge-50 focus:border-ember-500/50 focus:outline-none focus:ring-1 focus:ring-ember-500/20 transition-all duration-200 cursor-pointer"
               >
                 {['==', '!=', '>', '<', '>=', '<=', 'contains'].map((op) => (
-                  <option key={op} value={op}>
+                  <option key={op} value={op} className="bg-forge-800 text-forge-50">
                     {op}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Right side</label>
-              <Input
+              <label className="text-sm font-medium text-forge-200">Right side</label>
+              <input
                 placeholder="10"
                 value={config.value ?? ''}
                 onChange={(event) => handleConfigChange('value', event.target.value)}
+                className="w-full px-4 py-2.5 bg-forge-800/60 border border-forge-700/50 rounded-lg text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:ring-1 focus:ring-ember-500/20 focus:outline-none transition-all duration-200 font-mono"
               />
             </div>
-            <div className="rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-700">
-              Preview:{' '}
-              {`${config.condition || '{{variable.count}}'} ${config.operator || '=='} ${
-                config.value ?? ''
-              }`}
+            <div className="rounded-lg border border-bronze-400/30 bg-bronze-400/10 px-4 py-3 text-xs">
+              <span className="text-bronze-300">Preview: </span>
+              <code className="text-bronze-200 font-mono">
+                {`${config.condition || '{{variable.count}}'} ${config.operator || '=='} ${
+                  config.value ?? ''
+                }`}
+              </code>
             </div>
           </div>
         );
       case 'delay':
         return (
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-forge-200">
               Delay (seconds)
             </label>
-            <Input
+            <input
               type="number"
               min={0}
               value={config.delaySeconds ?? ''}
@@ -724,6 +754,7 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
                 handleConfigChange('delaySeconds', Number(event.target.value))
               }
               placeholder="60"
+              className="w-full px-4 py-2.5 bg-forge-800/60 border border-forge-700/50 rounded-lg text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:ring-1 focus:ring-ember-500/20 focus:outline-none transition-all duration-200"
             />
           </div>
         );
@@ -732,42 +763,61 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
     }
   };
 
+  // Determine node category for accent coloring
+  const getNodeCategory = (type: string) => {
+    if (type === 'trigger' || type === 'webhook') return 'trigger';
+    if (['action', 'slack', 'email', 'sheets', 'http'].includes(type)) return 'action';
+    if (['condition', 'ifElse', 'loop'].includes(type)) return 'logic';
+    return 'utility'; // variable, delay, etc.
+  };
+
+  const nodeCategory = getNodeCategory(selectedNode.data.type);
+  const categoryStyles = {
+    trigger: 'border-l-amber-500 bg-amber-500/10 text-amber-300',
+    action: 'border-l-ember-400 bg-ember-500/10 text-ember-300',
+    logic: 'border-l-bronze-400 bg-bronze-400/10 text-bronze-300',
+    utility: 'border-l-forge-500 bg-forge-700/30 text-forge-300',
+  };
+
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={handleClose}
     >
       <div
-        className="flex w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className="flex w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-forge-900/95 backdrop-blur-xl border border-forge-700/50 shadow-2xl shadow-black/50 animate-in fade-in slide-in-from-bottom-4 duration-200"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-gray-200 p-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              Configure Node
-            </h3>
-            <p className="text-sm text-gray-500">
-              {selectedNode.data.type.toUpperCase()} NODE
-            </p>
+        <div className="flex items-center justify-between border-b border-forge-700/50 p-4">
+          <div className="flex items-center gap-3">
+            <div className={`border-l-4 pl-3 py-1 rounded-r ${categoryStyles[nodeCategory]}`}>
+              <h3 className="text-lg font-semibold text-forge-50">
+                Configure Node
+              </h3>
+              <p className="text-xs font-medium uppercase tracking-wider">
+                {selectedNode.data.type} node
+              </p>
+            </div>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="rounded-full p-2 text-forge-400 transition-all duration-200 hover:bg-forge-800 hover:text-ember-300 focus:outline-none focus:ring-2 focus:ring-ember-500/50"
             aria-label="Close configuration panel"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className="max-h-[65vh] overflow-y-auto p-4">
-          <div className="space-y-4">
+        <div className="max-h-[65vh] overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-forge-700 scrollbar-track-transparent">
+          <div className="space-y-5">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Label</label>
-              <Input
+              <label className="text-sm font-medium text-forge-200">Label</label>
+              <input
                 value={label}
                 onChange={(event) => setLabel(event.target.value)}
                 placeholder="Node label"
+                className="w-full px-4 py-2.5 bg-forge-800/60 border border-forge-700/50 rounded-lg text-forge-50 placeholder:text-forge-500 focus:border-ember-500/50 focus:ring-1 focus:ring-ember-500/20 focus:outline-none transition-all duration-200"
               />
             </div>
 
@@ -776,16 +826,26 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 border-t border-gray-200 p-4">
-          <Button variant="danger" onClick={handleDelete} className="flex-1">
+        <div className="flex items-center gap-3 border-t border-forge-700/50 p-4 bg-forge-900/50">
+          <button
+            onClick={handleDelete}
+            className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 hover:border-red-500/50 focus:outline-none focus:ring-2 focus:ring-red-500/30 transition-all duration-200"
+          >
             Delete Node
-          </Button>
-          <Button onClick={handleSave} disabled={saveDisabled} className="flex-1">
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saveDisabled}
+            className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-gradient-to-r from-ember-500 to-ember-400 text-forge-950 hover:from-ember-400 hover:to-ember-300 focus:outline-none focus:ring-2 focus:ring-ember-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-ember-500 disabled:hover:to-ember-400 transition-all duration-200"
+          >
             Save Changes
-          </Button>
-          <Button variant="secondary" onClick={handleClose} className="flex-1">
+          </button>
+          <button
+            onClick={handleClose}
+            className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-forge-800/60 text-forge-300 border border-forge-700/50 hover:bg-forge-700/60 hover:text-forge-200 hover:border-forge-600/50 focus:outline-none focus:ring-2 focus:ring-forge-600/30 transition-all duration-200"
+          >
             Cancel
-          </Button>
+          </button>
         </div>
       </div>
     </div>

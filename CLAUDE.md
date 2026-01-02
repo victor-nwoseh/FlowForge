@@ -192,3 +192,141 @@ The system supports `{{variable}}` syntax throughout node configurations. Variab
 - Bull queue jobs have 3 retry attempts with exponential backoff
 - Topological sort ensures correct node execution order
 - Loop nodes support nested iterations and branch conditions
+
+---
+
+## Session Context (Last Updated: 2026-01-02)
+
+> **Purpose:** This section maintains continuity between development sessions. Update this at the end of each session.
+
+### Current Project Phase
+
+**Phase:** UI/UX Transformation (Visual Redesign Only)
+**Constraint:** NO changes to functionality, logic, or behavior. Only visual design and user experience.
+
+### UI/UX Redesign Progress
+
+The redesign follows a specific order. Status as of last session:
+
+| # | Component | Status |
+|---|-----------|--------|
+| 1 | Landing Page (NEW) | COMPLETED |
+| 2 | Login Page | COMPLETED |
+| 3 | Register Page | COMPLETED |
+| 4 | Navbar/Navigation (Dock) | COMPLETED |
+| 5 | Workflows List Page | COMPLETED |
+| 6 | Workflow Builder Page (Canvas + Toolbar) | COMPLETED |
+| 7 | Node Palette (Sidebar Component) | COMPLETED |
+| 8 | **Node Configuration Modal** | **COMPLETED** |
+| 9 | Executions List Page | PENDING - NEXT |
+| 10 | Execution Details Page | PENDING |
+| 11 | Integrations Page | PENDING |
+| 12 | Schedules Page | PENDING |
+| 13 | Templates Page | PENDING |
+| 14 | Modals & Dialogs | PENDING |
+| 15 | Toast Notifications | PENDING |
+| 16 | Loading States & Skeletons | PENDING |
+| 17 | Empty States | PENDING |
+
+### Design System: "Warm Forge"
+
+The established design language across all completed components:
+
+**Color Palette (defined in `frontend/tailwind.config.js`):**
+```
+Forge (Dark Neutrals):
+- forge-950: #0a0908 (deepest background)
+- forge-900: #121110 (primary background)
+- forge-800: #231f1c (cards, panels)
+- forge-700: #2e2924 (borders)
+- forge-50:  #f5f2ef (primary text)
+
+Ember (Orange Accents):
+- ember-500: #b34700 (base)
+- ember-300: #e65c00 (primary accent - MAIN BRAND COLOR)
+- ember-200: #ff751a (hover states)
+
+Bronze/Gold (Supporting):
+- bronze-300: #a67c52
+- gold-50: #ffd11a (highlights)
+```
+
+**Key Design Patterns:**
+- Glass-morphism: `bg-forge-900/80 backdrop-blur-xl`
+- Borders: `border-forge-700/50`
+- Text hierarchy: `text-forge-50` (primary), `text-forge-400` (secondary)
+- Active states: `bg-ember-500/20 text-ember-300 ring-1 ring-ember-500/30`
+- Hover: `hover:border-ember-500/40 hover:shadow-ember-sm`
+- Cards: Dark with subtle category accent borders
+
+**Premium Components:**
+- `LiquidMetalButton` - Animated metallic sweep effect button
+- `Dock` - Bottom-fixed navigation with Framer Motion magnification
+- `TrueFocus` - Animated blur focus effect for logo
+- `TextType` - GSAP typing animation
+- `GlareHover`, `StarBorder` - Interactive card effects
+
+**Typography:** Outfit font family (configured in Tailwind)
+
+### Last Session Work (2026-01-02)
+
+**Completed:**
+1. **Node Configuration Modal Redesign** (`frontend/src/components/NodeConfigPanel.tsx`)
+   - Complete transformation from light theme to Warm Forge dark theme
+   - **Modal Container:**
+     - Glass-morphism: `bg-forge-900/95 backdrop-blur-xl border-forge-700/50`
+     - Dark backdrop: `bg-black/60 backdrop-blur-sm`
+     - Entrance animation: `animate-in fade-in slide-in-from-bottom-4`
+   - **Header with Category System:**
+     - Dynamic node type badge with category-based accents:
+       - Triggers: `border-l-amber-500 bg-amber-500/10 text-amber-300`
+       - Actions: `border-l-ember-400 bg-ember-500/10 text-ember-300`
+       - Logic: `border-l-bronze-400 bg-bronze-400/10 text-bronze-300`
+       - Utility: `border-l-forge-500 bg-forge-700/30 text-forge-300`
+   - **Form Elements:**
+     - Dark inputs: `bg-forge-800/60 border-forge-700/50 text-forge-50`
+     - Ember focus states: `focus:border-ember-500/50 focus:ring-ember-500/20`
+     - Custom radio buttons with ember fill when selected
+     - Dark select dropdowns with dark option backgrounds
+   - **Info/Help Boxes:**
+     - Usage examples: `bg-ember-500/10 border-ember-500/20 text-ember-200`
+     - Preview boxes: `bg-forge-800/40 border-forge-700/50`
+     - If/Else preview: Bronze accent styling
+     - Cron presets: Dark preset buttons with ember hover
+   - **Warning Banners:**
+     - Transformed to dark amber: `bg-amber-500/10 border-amber-500/30 text-amber-200`
+   - **Action Buttons:**
+     - Delete: `bg-red-500/15 text-red-400 border-red-500/30` (subtle)
+     - Save: `bg-gradient-to-r from-ember-500 to-ember-400` (prominent)
+     - Cancel: `bg-forge-800/60 text-forge-300 border-forge-700/50`
+   - **Code Snippets:**
+     - Styled inline code: `bg-forge-800 text-ember-300 font-mono`
+   - Removed unused Button/Input imports (using native elements with inline styles)
+
+### Files Modified This Session
+
+- `frontend/src/components/NodeConfigPanel.tsx` - Complete visual overhaul (~800 lines updated)
+
+### Next Up: Executions List Page
+
+**File:** `frontend/src/pages/Executions.tsx` (or similar)
+
+**What to look for:**
+- Current styling (likely light theme)
+- Execution status indicators
+- Timestamp formatting
+- Table/list presentation
+- Filtering/search UI
+
+### Tools Available
+
+- **Puppeteer MCP** installed for visual testing (navigate, screenshot, click, fill, evaluate)
+- Dev servers typically running: Frontend (5173), Backend (3001), Docker (MongoDB + Redis)
+
+### Important Context for Resuming
+
+1. User has given **complete creative autonomy** over UI/UX - maximize this
+2. **Zero functionality changes** - only visual/UX improvements
+3. Always verify changes visually using Puppeteer
+4. Test login: `victor@test.com` / `password123`
+5. The design should feel like a "craftsman's forge" - warm, industrial, premium

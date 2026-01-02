@@ -217,9 +217,9 @@ The redesign follows a specific order. Status as of last session:
 | 5 | Workflows List Page | COMPLETED |
 | 6 | Workflow Builder Page (Canvas + Toolbar) | COMPLETED |
 | 7 | Node Palette (Sidebar Component) | COMPLETED |
-| 8 | **Node Configuration Modal** | **COMPLETED** |
-| 9 | Executions List Page | PENDING - NEXT |
-| 10 | Execution Details Page | PENDING |
+| 8 | Node Configuration Modal | COMPLETED |
+| 9 | **Executions List Page** | **COMPLETED** |
+| 10 | Execution Details Page | PENDING - NEXT |
 | 11 | Integrations Page | PENDING |
 | 12 | Schedules Page | PENDING |
 | 13 | Templates Page | PENDING |
@@ -273,50 +273,50 @@ Bronze/Gold (Supporting):
 **Completed:**
 1. **Node Configuration Modal Redesign** (`frontend/src/components/NodeConfigPanel.tsx`)
    - Complete transformation from light theme to Warm Forge dark theme
-   - **Modal Container:**
-     - Glass-morphism: `bg-forge-900/95 backdrop-blur-xl border-forge-700/50`
-     - Dark backdrop: `bg-black/60 backdrop-blur-sm`
-     - Entrance animation: `animate-in fade-in slide-in-from-bottom-4`
-   - **Header with Category System:**
-     - Dynamic node type badge with category-based accents:
-       - Triggers: `border-l-amber-500 bg-amber-500/10 text-amber-300`
-       - Actions: `border-l-ember-400 bg-ember-500/10 text-ember-300`
-       - Logic: `border-l-bronze-400 bg-bronze-400/10 text-bronze-300`
-       - Utility: `border-l-forge-500 bg-forge-700/30 text-forge-300`
-   - **Form Elements:**
-     - Dark inputs: `bg-forge-800/60 border-forge-700/50 text-forge-50`
-     - Ember focus states: `focus:border-ember-500/50 focus:ring-ember-500/20`
-     - Custom radio buttons with ember fill when selected
-     - Dark select dropdowns with dark option backgrounds
-   - **Info/Help Boxes:**
-     - Usage examples: `bg-ember-500/10 border-ember-500/20 text-ember-200`
-     - Preview boxes: `bg-forge-800/40 border-forge-700/50`
-     - If/Else preview: Bronze accent styling
-     - Cron presets: Dark preset buttons with ember hover
-   - **Warning Banners:**
-     - Transformed to dark amber: `bg-amber-500/10 border-amber-500/30 text-amber-200`
-   - **Action Buttons:**
-     - Delete: `bg-red-500/15 text-red-400 border-red-500/30` (subtle)
-     - Save: `bg-gradient-to-r from-ember-500 to-ember-400` (prominent)
-     - Cancel: `bg-forge-800/60 text-forge-300 border-forge-700/50`
-   - **Code Snippets:**
-     - Styled inline code: `bg-forge-800 text-ember-300 font-mono`
-   - Removed unused Button/Input imports (using native elements with inline styles)
+   - Modal container with glass-morphism effect
+   - Header with dynamic category-based badge system (Trigger/Action/Logic/Utility)
+   - Dark form elements with ember focus states
+   - Custom radio buttons and styled info boxes
+   - Status badges, warning banners, and action buttons all in dark theme
+
+2. **Executions List Page Redesign** (`frontend/src/pages/ExecutionsList.tsx`)
+   - **Table Container:**
+     - Glass-morphism: `bg-forge-900/80 backdrop-blur-xl border-forge-700/50`
+     - Dark header row: `bg-forge-800/60 text-forge-400`
+   - **Status Badge System:**
+     - Success: `bg-emerald-500/15 text-emerald-400 border-emerald-500/30` (green pill)
+     - Failed: `bg-red-500/15 text-red-400 border-red-500/30` (red pill)
+     - Running: `bg-amber-500/15 text-amber-400 animate-pulse` (amber with pulse)
+     - Pending: `bg-forge-700/50 text-forge-400` (muted pill)
+   - **Row Styling:**
+     - Dark rows with `divide-forge-700/30` dividers
+     - Hover state: `hover:bg-forge-800/40 hover:border-l-2 hover:border-l-ember-500/50`
+     - Workflow ID in `text-forge-50`, trigger in `text-forge-400`
+   - **View Details Button:**
+     - Dark style: `bg-forge-800/60 text-forge-300 border-forge-700/50`
+     - Hover: `hover:text-ember-300 hover:border-ember-500/30`
+   - **Empty State:**
+     - Dark dashed border container with icon and ember gradient CTA
+   - **Error State:**
+     - Dark red: `bg-red-500/10 border-red-500/30 text-red-300`
+   - **Filter Badge:**
+     - Ember-themed: `bg-ember-500/15 border-ember-500/30 text-ember-300`
 
 ### Files Modified This Session
 
-- `frontend/src/components/NodeConfigPanel.tsx` - Complete visual overhaul (~800 lines updated)
+- `frontend/src/components/NodeConfigPanel.tsx` - Complete visual overhaul
+- `frontend/src/pages/ExecutionsList.tsx` - Complete visual overhaul
 
-### Next Up: Executions List Page
+### Next Up: Execution Details Page
 
-**File:** `frontend/src/pages/Executions.tsx` (or similar)
+**File:** `frontend/src/pages/ExecutionDetails.tsx`
 
 **What to look for:**
-- Current styling (likely light theme)
-- Execution status indicators
-- Timestamp formatting
-- Table/list presentation
-- Filtering/search UI
+- Execution status header
+- Node execution timeline/logs
+- Real-time updates styling
+- Log output formatting
+- Back navigation
 
 ### Tools Available
 

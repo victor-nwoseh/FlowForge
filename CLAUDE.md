@@ -195,13 +195,13 @@ The system supports `{{variable}}` syntax throughout node configurations. Variab
 
 ---
 
-## Session Context (Last Updated: 2026-01-03 - Session 3)
+## Session Context (Last Updated: 2026-01-03 - Session 4)
 
 > **Purpose:** This section maintains continuity between development sessions. Update this at the end of each session.
 
 ### Current Project Phase
 
-**Phase:** UI/UX Transformation (Visual Redesign Only) - **FINAL PHASE**
+**Phase:** UI/UX Transformation (Visual Redesign Only) - **FINAL PHASE (Phase 7)**
 **Constraint:** NO changes to functionality, logic, or behavior. Only visual design and user experience.
 
 ### UI/UX Redesign Progress
@@ -221,8 +221,8 @@ The system supports `{{variable}}` syntax throughout node configurations. Variab
 | 11 | Integrations Page | COMPLETED |
 | 12 | Schedules Page | COMPLETED |
 | 13 | Templates Page | COMPLETED |
-| 14 | **Modals & Dialogs** | **PENDING - NEXT** |
-| 15 | Toast Notifications | PENDING |
+| 14 | Modals & Dialogs | COMPLETED |
+| 15 | **Toast Notifications** | **PENDING - NEXT** |
 | 16 | Loading States & Skeletons | PENDING |
 | 17 | Empty States | PENDING |
 
@@ -266,113 +266,129 @@ Bronze/Gold (Supporting):
 - `TrueFocus` - Animated blur focus effect for logo
 - `TextType` - GSAP typing animation
 - `GlareHover`, `StarBorder` - Interactive card effects
+- `ConfirmDialog` - Reusable confirmation modal (NEW - Session 4)
 
 **Typography:** Outfit font family (configured in Tailwind)
 
-### Session 3 Work (2026-01-03)
+### Session 4 Work (2026-01-03)
 
-**Completed this session:**
+**Focus: Modals & Dialogs Audit + ConfirmDialog Implementation**
 
-1. **Integrations Page Redesign** (`frontend/src/pages/Integrations.tsx`)
-   - **4-Quarter Card Layout:**
-     - Q1: Icon + Service Name + Connected badge
-     - Q2: Description
-     - Q3: Email/Workspace info
-     - Q4: Disconnect/Connect button (always at bottom via `flex flex-col` + `mt-auto`)
-   - **Service-Specific Accents:**
-     - Slack: `border-l-violet-500/60` + violet icon background
-     - Gmail: `border-l-rose-500/60` + rose icon background
-     - Google Sheets: `border-l-emerald-500/60` + emerald icon background
-   - **Connected Status:** Animated emerald pulse dot badge
-   - **Not Connected Status:** Muted forge badge with AlertCircle icon
-   - **Account Info:** Monospace font in dark badge container
-   - **Action Buttons:**
-     - Connect: Ember gradient with external link icon
-     - Disconnect: `bg-red-500/10 text-red-400 border-red-500/30`
-   - **Loading State:** 3 skeleton cards with shimmer effect
+**1. Modal & Dialog Audit Results:**
 
-2. **Schedules Page Redesign** (`frontend/src/pages/Schedules.tsx`)
-   - **Page Header:** Clock icon badge + title in forge-50
-   - **Table Container:** Glass-morphism with dark theme
-   - **Header Row:** `bg-forge-800/60` with uppercase forge-400 text
-   - **Workflow Links:** `text-ember-400` with hover underline
-   - **Cron Display:** Monospace `text-forge-50` + human-readable description in `text-forge-500`
-   - **Status Badges:**
-     - Active: Emerald with animated pulse dot
-     - Inactive: Muted forge with static dot
-   - **Row Styling:** `opacity-70` for inactive rows, hover state `bg-forge-800/40`
-   - **Action Buttons:**
-     - Pause: `bg-amber-500/10 text-amber-400` (amber = warning)
-     - Activate: `bg-emerald-500/10 text-emerald-400` (emerald = go)
-     - Delete: `bg-red-500/10 text-red-400` (red = danger)
-     - Fixed width `w-24` for Pause/Activate consistency
-   - **Empty State:** Dark card with Calendar icon and ember gradient CTA
-   - **Loading State:** Skeleton table rows
+| Modal | File | Status |
+|-------|------|--------|
+| Node Configuration Modal | `NodeConfigPanel.tsx` | Already redesigned |
+| Workflow Stats Modal | `WorkflowBuilder.tsx` | Already redesigned |
+| Template Preview Modal | `Templates.tsx` | Already redesigned |
 
-3. **Templates Page Redesign** (`frontend/src/pages/Templates.tsx`)
-   - **Page Header:** LayoutTemplate icon badge + title
-   - **Search Input:** Dark `bg-forge-800/60` with ember focus ring
-   - **Category Filter Pills:**
-     - Active: `bg-ember-500/20 text-ember-300 border-ember-500/40`
-     - Inactive: `bg-forge-800/60 text-forge-400 border-forge-700/50`
-   - **Template Cards:** Glass-morphism with consistent 5-row structure:
-     - Row 1: Icon + Name + Badges (category + difficulty)
-     - Row 2: Description (`h-12` fixed height)
-     - Row 3: Tags (`h-7` fixed height)
-     - Row 4: Usage count with amber star
-     - Row 5: Use Template (ember gradient) + Preview buttons
-   - **Category Badges (Dark Theme):**
-     - Sales: Emerald
-     - Marketing: Violet
-     - Operations: Blue
-     - Finance: Amber
-     - Support: Orange
-     - General: Muted forge
-   - **Difficulty Badges (Dark Theme):**
-     - Beginner: Emerald
-     - Intermediate: Amber
-     - Advanced: Red
-   - **Tags:** `bg-forge-800/60 border-forge-700/40 text-forge-500`
-   - **Preview Modal:** Complete dark theme overhaul:
+| Native `window.confirm()` Locations | File | Line | Status |
+|-------------------------------------|------|------|--------|
+| Node deletion (config modal) | `NodeConfigPanel.tsx` | 172 | REPLACED |
+| Workflow deletion | `WorkflowsList.tsx` | 142 | REPLACED |
+| Schedule deletion | `Schedules.tsx` | 94 | REPLACED |
+
+**2. Created `ConfirmDialog` Component** (`frontend/src/components/ConfirmDialog.tsx`)
+   - **Reusable confirmation modal** replacing all `window.confirm()` calls
+   - **Warm Forge Styling:**
      - Backdrop: `bg-forge-950/80 backdrop-blur-sm`
      - Container: `bg-forge-900/95 backdrop-blur-xl border-forge-700/50`
-     - Node cards: `bg-forge-800/60 border-forge-700/40`
-     - Edge pills: `bg-ember-500/15 text-ember-300` with arrow icons
-     - Close button: X icon with hover state
-     - Import button: Ember gradient
-   - **Loading State:** 6 skeleton cards
-   - **Empty State:** Dark card with FileText icon
+     - Glass-morphism effect with dark theme
+   - **Variant Support:**
+     - `danger` (default): Red icon/button for destructive actions (Trash2 icon)
+     - `warning`: Amber icon/button for cautionary actions (AlertTriangle icon)
+     - `default`: Ember gradient for neutral confirmations
+   - **Props:**
+     - `isOpen`, `onConfirm`, `onCancel` (required)
+     - `title`, `message` (required)
+     - `confirmLabel`, `cancelLabel` (optional, defaults: "Confirm"/"Cancel")
+     - `variant` (optional, default: "danger")
+   - **Keyboard Support:**
+     - Escape key → Cancel
+     - Enter key → Confirm
+   - **Animation:** `animate-in fade-in zoom-in-95 duration-200`
+
+**3. Updated WorkflowBuilder Keyboard Behavior** (`frontend/src/pages/WorkflowBuilder.tsx`)
+   - **Removed Backspace deletion:** Added `deleteKeyCode={null}` to ReactFlow component to disable default behavior
+   - **Delete key now shows ConfirmDialog:** Instead of immediate deletion, pressing Delete opens the styled confirmation modal
+   - **Added State:** `isDeleteConfirmOpen` to control dialog visibility
+   - **Node name displayed in confirmation message**
+
+**4. Replaced `window.confirm()` in NodeConfigPanel** (`frontend/src/components/NodeConfigPanel.tsx`)
+   - Added `isDeleteConfirmOpen` state
+   - `handleDelete()` now opens ConfirmDialog
+   - `handleConfirmDelete()` performs actual deletion
+   - Wrapped return in React fragment to include ConfirmDialog
+   - Node label displayed in confirmation message
+
+**5. Replaced `window.confirm()` in WorkflowsList** (`frontend/src/pages/WorkflowsList.tsx`)
+   - Added `workflowToDelete` state: `{ id: string; name: string } | null`
+   - `handleDeleteWorkflow()` now sets `workflowToDelete` state
+   - `handleConfirmDeleteWorkflow()` performs actual deletion
+   - Workflow name displayed in confirmation message
+
+**6. Replaced `window.confirm()` in Schedules** (`frontend/src/pages/Schedules.tsx`)
+   - Added `scheduleToDelete` state: `{ id: string; workflowName: string } | null`
+   - `handleDelete()` updated to accept `workflowName` parameter
+   - `handleConfirmDelete()` performs actual deletion
+   - Workflow name displayed in confirmation message
 
 ### Files Modified This Session
 
-- `frontend/src/pages/Integrations.tsx` - Complete visual overhaul with 4-quarter layout
-- `frontend/src/pages/Schedules.tsx` - Complete visual overhaul with dark table
-- `frontend/src/pages/Templates.tsx` - Complete visual overhaul with aligned cards + preview modal
+- `frontend/src/components/ConfirmDialog.tsx` - **NEW FILE** - Reusable confirmation dialog component
+- `frontend/src/pages/WorkflowBuilder.tsx` - Delete key now shows ConfirmDialog, Backspace disabled
+- `frontend/src/components/NodeConfigPanel.tsx` - Replaced window.confirm with ConfirmDialog
+- `frontend/src/pages/WorkflowsList.tsx` - Replaced window.confirm with ConfirmDialog
+- `frontend/src/pages/Schedules.tsx` - Replaced window.confirm with ConfirmDialog
 
-### Next Up: Phase 7 - Shared Components & Polish
+### ConfirmDialog Usage Pattern
 
-**This is the FINAL PHASE of the UI/UX transformation.**
+```tsx
+import ConfirmDialog from '../components/ConfirmDialog';
 
-**Approach for Phase 7:**
-Before creating a redesign plan for each category, first **audit the codebase** and provide a comprehensive list of all instances, so the user knows exactly what to review after implementation.
+// State
+const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string } | null>(null);
 
-**Components to address:**
+// Trigger
+const handleDelete = (id: string, name: string) => {
+  setItemToDelete({ id, name });
+};
 
-1. **Modals & Dialogs** (NEXT)
-   - Already redesigned: Node Configuration Modal, Template Preview Modal
-   - Need to audit codebase for any other modals/dialogs
+// Confirm action
+const handleConfirmDelete = () => {
+  if (!itemToDelete) return;
+  deleteMutation.mutate(itemToDelete.id);
+  setItemToDelete(null);
+};
 
-2. **Toast Notifications**
-   - Currently using `react-hot-toast`
-   - Need to audit where toasts are used and their current styling
+// JSX
+<ConfirmDialog
+  isOpen={itemToDelete !== null}
+  onConfirm={handleConfirmDelete}
+  onCancel={() => setItemToDelete(null)}
+  title="Delete Item"
+  message={`Are you sure you want to delete "${itemToDelete?.name}"? This action cannot be undone.`}
+  confirmLabel="Delete"
+  cancelLabel="Cancel"
+  variant="danger"
+/>
+```
 
-3. **Loading States & Skeletons**
-   - Many pages already have dark-themed loading skeletons (added during page redesigns)
+### Next Up: Toast Notifications
+
+**Remaining Phase 7 items:**
+
+1. **Toast Notifications** (NEXT)
+   - Currently using `react-hot-toast` with default styling
+   - Need to audit where toasts are used
+   - Apply Warm Forge dark theme styling
+
+2. **Loading States & Skeletons**
+   - Many pages already have dark-themed loading skeletons
    - Need to audit for any remaining light-themed loading states
 
-4. **Empty States**
-   - User believes Workflows List is the only empty state needing redesign
-   - Need to confirm by checking all pages with potential empty states
+3. **Empty States**
+   - Need to audit all empty states for dark theme consistency
    - Use empty test account: `victor6@test.com` / `password123`
 
 ### Tools Available
@@ -392,4 +408,5 @@ Before creating a redesign plan for each category, first **audit the codebase** 
 3. Always verify changes visually using Puppeteer
 4. The design should feel like a "craftsman's forge" - warm, industrial, premium
 5. For Phase 7, **audit first, then plan** - provide inventory before redesign plans
-6. Two modals already redesigned: Node Configuration Modal, Template Preview Modal
+6. All modals/dialogs now complete - custom ConfirmDialog replaces all browser confirms
+7. ConfirmDialog component is reusable for any future confirmation needs

@@ -27,6 +27,7 @@ import NodeConfigPanel from '../components/NodeConfigPanel';
 import NodePalette from '../components/NodePalette';
 import LoadingSpinner from '../components/LoadingSpinner';
 import WorkflowStats from '../components/WorkflowStats';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { useWorkflowStore } from '../store/workflow.store';
 import workflowService from '../services/workflow.service';
 import api from '../services/api';
@@ -60,6 +61,7 @@ const WorkflowBuilder = () => {
   const invalidConnectionToastShownRef = useRef(false);
   const [isManualSaving, setIsManualSaving] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const validateForm = useCallback(
     (workflowName: string, workflowDescription: string) => {
@@ -772,7 +774,7 @@ const WorkflowBuilder = () => {
 
       if (event.key === 'Delete' && selectedNode) {
         event.preventDefault();
-        deleteSelectedNode();
+        setIsDeleteConfirmOpen(true);
         return;
       }
 
@@ -974,6 +976,7 @@ const WorkflowBuilder = () => {
               onDrop={onDrop}
               onDragOver={onDragOver}
               onInit={setReactFlowInstance}
+              deleteKeyCode={null}
               defaultEdgeOptions={{
                 type: 'smoothstep',
                 animated: false,
@@ -1018,6 +1021,19 @@ const WorkflowBuilder = () => {
           </div>
         </div>
       ) : null}
+      <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        onConfirm={() => {
+          deleteSelectedNode();
+          setIsDeleteConfirmOpen(false);
+        }}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
+        title="Delete Node"
+        message={`Are you sure you want to delete "${selectedNode?.data?.label || 'this node'}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+      />
     </div>
   );
 };

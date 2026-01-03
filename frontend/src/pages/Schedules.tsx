@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import cronstrue from 'cronstrue';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { Play, Pause, Trash2, Calendar, Clock } from 'lucide-react';
 
 import api from '../services/api';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 type Schedule = {
   _id: string;
@@ -61,6 +62,7 @@ const LoadingSkeleton = () => (
 const Schedules: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [scheduleToDelete, setScheduleToDelete] = useState<{ id: string; workflowName: string } | null>(null);
 
   const { data: schedules = [], isLoading } = useQuery<Schedule[]>({
     queryKey: ['schedules'],
@@ -90,10 +92,14 @@ const Schedules: React.FC = () => {
     toggleMutation.mutate({ scheduleId: schedule._id, isActive: !schedule.isActive });
   };
 
-  const handleDelete = (scheduleId: string) => {
-    const confirm = window.confirm('Delete this schedule?');
-    if (!confirm) return;
-    deleteMutation.mutate(scheduleId);
+  const handleDelete = (scheduleId: string, workflowName: string) => {
+    setScheduleToDelete({ id: scheduleId, workflowName });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!scheduleToDelete) return;
+    deleteMutation.mutate(scheduleToDelete.id);
+    setScheduleToDelete(null);
   };
 
   return (
@@ -271,7 +277,7 @@ const Schedules: React.FC = () => {
 
                         {/* Delete Button */}
                         <button
-                          onClick={() => handleDelete(schedule._id)}
+                          onClick={() => handleDelete(schedule._id, workflow.name || 'Untitled Workflow')}
                           disabled={deleteMutation.isPending}
                           className="
                             inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium
@@ -292,6 +298,16 @@ const Schedules: React.FC = () => {
           </table>
         </div>
       )}
+      <ConfirmDialog
+        isOpen={scheduleToDelete !== null}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setScheduleToDelete(null)}
+        title="Delete Schedule"
+        message={`Are you sure you want to delete the schedule for "${scheduleToDelete?.workflowName}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+      />
     </div>
   );
 };

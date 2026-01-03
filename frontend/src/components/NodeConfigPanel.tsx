@@ -6,6 +6,7 @@ import cronstrue from 'cronstrue';
 
 import { useWorkflowStore } from '../store/workflow.store';
 import api from '../services/api';
+import ConfirmDialog from './ConfirmDialog';
 
 type ConnectionSummary = {
   service: 'slack' | 'google';
@@ -59,6 +60,7 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
   const [config, setConfig] = useState<Record<string, any>>({});
   const [triggerType, setTriggerType] = useState<'manual' | 'scheduled'>('manual');
   const [cronExpression, setCronExpression] = useState('');
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const loopSourceType = useMemo<'node' | 'variable'>(() => {
     const src = (config.arraySource ?? '').toString();
     if (src.startsWith('node_') && src.includes('.')) {
@@ -167,16 +169,16 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
     if (!selectedNode) {
       return;
     }
+    setIsDeleteConfirmOpen(true);
+  };
 
-    const shouldDelete =
-      window.confirm('Are you sure you want to delete this node?');
-
-    if (!shouldDelete) {
+  const handleConfirmDelete = () => {
+    if (!selectedNode) {
       return;
     }
-
     deleteNode(selectedNode.id);
     toast.success('Node deleted successfully');
+    setIsDeleteConfirmOpen(false);
     handleClose();
   };
 
@@ -780,6 +782,7 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
   };
 
   return (
+    <>
     <div
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={handleClose}
@@ -849,6 +852,17 @@ const NodeConfigPanel = ({ isOpen, onClose }: NodeConfigPanelProps) => {
         </div>
       </div>
     </div>
+    <ConfirmDialog
+      isOpen={isDeleteConfirmOpen}
+      onConfirm={handleConfirmDelete}
+      onCancel={() => setIsDeleteConfirmOpen(false)}
+      title="Delete Node"
+      message={`Are you sure you want to delete "${selectedNode?.data?.label || 'this node'}"? This action cannot be undone.`}
+      confirmLabel="Delete"
+      cancelLabel="Cancel"
+      variant="danger"
+    />
+    </>
   );
 };
 

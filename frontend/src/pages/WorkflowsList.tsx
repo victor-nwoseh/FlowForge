@@ -17,6 +17,7 @@ import {
 import Button from '../components/Button';
 import EmptyState from '../components/EmptyState';
 import LiquidMetalButton from '../components/LiquidMetalButton';
+import ConfirmDialog from '../components/ConfirmDialog';
 import workflowService from '../services/workflow.service';
 import { executionService } from '../services/execution.service';
 import { generateEdgeId, generateNodeId } from '../utils/workflow.utils';
@@ -29,6 +30,7 @@ const WorkflowsList = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [workflowToDelete, setWorkflowToDelete] = useState<{ id: string; name: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const {
@@ -133,20 +135,21 @@ const WorkflowsList = () => {
   const handleDeleteWorkflow = (
     event: React.MouseEvent,
     id: string | undefined,
+    name: string | undefined,
   ) => {
     event.stopPropagation();
     if (!id) {
       return;
     }
+    setWorkflowToDelete({ id, name: name || 'Untitled Workflow' });
+  };
 
-    const confirmed = window.confirm(
-      'Are you sure you want to delete this workflow? This action cannot be undone.',
-    );
-    if (!confirmed) {
+  const handleConfirmDeleteWorkflow = () => {
+    if (!workflowToDelete) {
       return;
     }
-
-    deleteMutation.mutate(id);
+    deleteMutation.mutate(workflowToDelete.id);
+    setWorkflowToDelete(null);
   };
 
   const handleDuplicateWorkflow = (
@@ -458,7 +461,7 @@ const WorkflowsList = () => {
                     type="button"
                     className="rounded-full p-2 bg-forge-800/50 text-forge-400 transition hover:bg-red-500/20 hover:text-red-400 hover:shadow-md hover:shadow-red-500/20 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 focus:ring-offset-forge-950 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={(event) =>
-                      handleDeleteWorkflow(event, workflow._id ?? undefined)
+                      handleDeleteWorkflow(event, workflow._id ?? undefined, workflow.name)
                     }
                     aria-label="Delete workflow"
                     disabled={deletingId === workflow._id}
@@ -483,6 +486,16 @@ const WorkflowsList = () => {
         </div>
       )}
       </div>
+      <ConfirmDialog
+        isOpen={workflowToDelete !== null}
+        onConfirm={handleConfirmDeleteWorkflow}
+        onCancel={() => setWorkflowToDelete(null)}
+        title="Delete Workflow"
+        message={`Are you sure you want to delete "${workflowToDelete?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+      />
     </div>
   );
 };

@@ -195,18 +195,16 @@ The system supports `{{variable}}` syntax throughout node configurations. Variab
 
 ---
 
-## Session Context (Last Updated: 2026-01-02 - Session 2)
+## Session Context (Last Updated: 2026-01-03 - Session 3)
 
 > **Purpose:** This section maintains continuity between development sessions. Update this at the end of each session.
 
 ### Current Project Phase
 
-**Phase:** UI/UX Transformation (Visual Redesign Only)
+**Phase:** UI/UX Transformation (Visual Redesign Only) - **FINAL PHASE**
 **Constraint:** NO changes to functionality, logic, or behavior. Only visual design and user experience.
 
 ### UI/UX Redesign Progress
-
-The redesign follows a specific order. Status as of last session:
 
 | # | Component | Status |
 |---|-----------|--------|
@@ -220,10 +218,10 @@ The redesign follows a specific order. Status as of last session:
 | 8 | Node Configuration Modal | COMPLETED |
 | 9 | Executions List Page | COMPLETED |
 | 10 | Execution Details Page | COMPLETED |
-| 11 | **Integrations Page** | **PENDING - NEXT** |
-| 12 | Schedules Page | PENDING |
-| 13 | Templates Page | PENDING |
-| 14 | Modals & Dialogs | PENDING |
+| 11 | Integrations Page | COMPLETED |
+| 12 | Schedules Page | COMPLETED |
+| 13 | Templates Page | COMPLETED |
+| 14 | **Modals & Dialogs** | **PENDING - NEXT** |
 | 15 | Toast Notifications | PENDING |
 | 16 | Loading States & Skeletons | PENDING |
 | 17 | Empty States | PENDING |
@@ -258,6 +256,9 @@ Bronze/Gold (Supporting):
 - Active states: `bg-ember-500/20 text-ember-300 ring-1 ring-ember-500/30`
 - Hover: `hover:border-ember-500/40 hover:shadow-ember-sm`
 - Cards: Dark with subtle category accent borders
+- Primary buttons: `bg-gradient-to-r from-ember-500 to-ember-400` with shadow
+- Secondary buttons: `bg-forge-800/60 text-forge-300 border border-forge-700/50`
+- Status badges: Semantic colors (emerald=success, amber=warning, red=error/danger)
 
 **Premium Components:**
 - `LiquidMetalButton` - Animated metallic sweep effect button
@@ -268,94 +269,127 @@ Bronze/Gold (Supporting):
 
 **Typography:** Outfit font family (configured in Tailwind)
 
-### Last Session Work (2026-01-02)
+### Session 3 Work (2026-01-03)
 
-**Completed:**
-1. **Node Configuration Modal Redesign** (`frontend/src/components/NodeConfigPanel.tsx`)
-   - Complete transformation from light theme to Warm Forge dark theme
-   - Modal container with glass-morphism effect
-   - Header with dynamic category-based badge system (Trigger/Action/Logic/Utility)
-   - Dark form elements with ember focus states
-   - Custom radio buttons and styled info boxes
-   - Status badges, warning banners, and action buttons all in dark theme
+**Completed this session:**
 
-2. **Executions List Page Redesign** (`frontend/src/pages/ExecutionsList.tsx`)
-   - **Table Container:**
-     - Glass-morphism: `bg-forge-900/80 backdrop-blur-xl border-forge-700/50`
-     - Dark header row: `bg-forge-800/60 text-forge-400`
-   - **Status Badge System:**
-     - Success: `bg-emerald-500/15 text-emerald-400 border-emerald-500/30` (green pill)
-     - Failed: `bg-red-500/15 text-red-400 border-red-500/30` (red pill)
-     - Running: `bg-amber-500/15 text-amber-400 animate-pulse` (amber with pulse)
-     - Pending: `bg-forge-700/50 text-forge-400` (muted pill)
-   - **Row Styling:**
-     - Dark rows with `divide-forge-700/30` dividers
-     - Hover state: `hover:bg-forge-800/40 hover:border-l-2 hover:border-l-ember-500/50`
-     - Workflow ID in `text-forge-50`, trigger in `text-forge-400`
-   - **View Details Button:**
-     - Dark style: `bg-forge-800/60 text-forge-300 border-forge-700/50`
-     - Hover: `hover:text-ember-300 hover:border-ember-500/30`
-   - **Empty State:**
-     - Dark dashed border container with icon and ember gradient CTA
-   - **Error State:**
-     - Dark red: `bg-red-500/10 border-red-500/30 text-red-300`
-   - **Filter Badge:**
-     - Ember-themed: `bg-ember-500/15 border-ember-500/30 text-ember-300`
+1. **Integrations Page Redesign** (`frontend/src/pages/Integrations.tsx`)
+   - **4-Quarter Card Layout:**
+     - Q1: Icon + Service Name + Connected badge
+     - Q2: Description
+     - Q3: Email/Workspace info
+     - Q4: Disconnect/Connect button (always at bottom via `flex flex-col` + `mt-auto`)
+   - **Service-Specific Accents:**
+     - Slack: `border-l-violet-500/60` + violet icon background
+     - Gmail: `border-l-rose-500/60` + rose icon background
+     - Google Sheets: `border-l-emerald-500/60` + emerald icon background
+   - **Connected Status:** Animated emerald pulse dot badge
+   - **Not Connected Status:** Muted forge badge with AlertCircle icon
+   - **Account Info:** Monospace font in dark badge container
+   - **Action Buttons:**
+     - Connect: Ember gradient with external link icon
+     - Disconnect: `bg-red-500/10 text-red-400 border-red-500/30`
+   - **Loading State:** 3 skeleton cards with shimmer effect
 
-3. **Execution Details Page Redesign** (`frontend/src/pages/ExecutionDetails.tsx`)
-   - **Status Color Map:**
-     - Success: `text-emerald-400 bg-emerald-500/15 border-emerald-500/30`
-     - Failed: `text-red-400 bg-red-500/15 border-red-500/30`
-     - Running: `text-amber-400 bg-amber-500/15 animate-pulse`
-     - Pending: `text-forge-400 bg-forge-700/50 border-forge-600/30`
-   - **Page Header:**
-     - Back button: `text-ember-400 hover:text-ember-300`
-     - Title: `text-forge-50`, Workflow ID in styled code badge
-   - **Stats Grid Card:**
-     - Glass-morphism: `bg-forge-900/80 backdrop-blur-xl border-forge-700/50`
-     - Labels: `text-forge-500 uppercase tracking-wider`
-     - Values: `text-forge-50 font-semibold`
-   - **Node Logs Section:**
-     - Container: Glass-morphism with dark theme
-     - Progress bar: `bg-gradient-to-r from-ember-500 to-ember-400`
-     - Live indicator: `bg-ember-500/15 text-ember-300 animate-pulse`
-   - **Node Log Cards:**
-     - Container: `bg-forge-800/60 border-forge-700/50`
-     - Branch taken: Left border accent (emerald for true, red for false)
-     - Node name: `text-forge-50`, type in `text-forge-400`
-     - Duration: `text-forge-300 font-mono`
-   - **CollapsibleJson Component:**
-     - Container: `bg-forge-800/40 border-forge-700/30`
-     - Toggle: `text-forge-200 hover:bg-forge-700/30`
-     - Content: `text-forge-300 font-mono`
-   - **Error Displays:**
-     - All errors: `bg-red-500/10 border-red-500/30 text-red-300`
+2. **Schedules Page Redesign** (`frontend/src/pages/Schedules.tsx`)
+   - **Page Header:** Clock icon badge + title in forge-50
+   - **Table Container:** Glass-morphism with dark theme
+   - **Header Row:** `bg-forge-800/60` with uppercase forge-400 text
+   - **Workflow Links:** `text-ember-400` with hover underline
+   - **Cron Display:** Monospace `text-forge-50` + human-readable description in `text-forge-500`
+   - **Status Badges:**
+     - Active: Emerald with animated pulse dot
+     - Inactive: Muted forge with static dot
+   - **Row Styling:** `opacity-70` for inactive rows, hover state `bg-forge-800/40`
+   - **Action Buttons:**
+     - Pause: `bg-amber-500/10 text-amber-400` (amber = warning)
+     - Activate: `bg-emerald-500/10 text-emerald-400` (emerald = go)
+     - Delete: `bg-red-500/10 text-red-400` (red = danger)
+     - Fixed width `w-24` for Pause/Activate consistency
+   - **Empty State:** Dark card with Calendar icon and ember gradient CTA
+   - **Loading State:** Skeleton table rows
+
+3. **Templates Page Redesign** (`frontend/src/pages/Templates.tsx`)
+   - **Page Header:** LayoutTemplate icon badge + title
+   - **Search Input:** Dark `bg-forge-800/60` with ember focus ring
+   - **Category Filter Pills:**
+     - Active: `bg-ember-500/20 text-ember-300 border-ember-500/40`
+     - Inactive: `bg-forge-800/60 text-forge-400 border-forge-700/50`
+   - **Template Cards:** Glass-morphism with consistent 5-row structure:
+     - Row 1: Icon + Name + Badges (category + difficulty)
+     - Row 2: Description (`h-12` fixed height)
+     - Row 3: Tags (`h-7` fixed height)
+     - Row 4: Usage count with amber star
+     - Row 5: Use Template (ember gradient) + Preview buttons
+   - **Category Badges (Dark Theme):**
+     - Sales: Emerald
+     - Marketing: Violet
+     - Operations: Blue
+     - Finance: Amber
+     - Support: Orange
+     - General: Muted forge
+   - **Difficulty Badges (Dark Theme):**
+     - Beginner: Emerald
+     - Intermediate: Amber
+     - Advanced: Red
+   - **Tags:** `bg-forge-800/60 border-forge-700/40 text-forge-500`
+   - **Preview Modal:** Complete dark theme overhaul:
+     - Backdrop: `bg-forge-950/80 backdrop-blur-sm`
+     - Container: `bg-forge-900/95 backdrop-blur-xl border-forge-700/50`
+     - Node cards: `bg-forge-800/60 border-forge-700/40`
+     - Edge pills: `bg-ember-500/15 text-ember-300` with arrow icons
+     - Close button: X icon with hover state
+     - Import button: Ember gradient
+   - **Loading State:** 6 skeleton cards
+   - **Empty State:** Dark card with FileText icon
 
 ### Files Modified This Session
 
-- `frontend/src/components/NodeConfigPanel.tsx` - Complete visual overhaul
-- `frontend/src/pages/ExecutionsList.tsx` - Complete visual overhaul
-- `frontend/src/pages/ExecutionDetails.tsx` - Complete visual overhaul
+- `frontend/src/pages/Integrations.tsx` - Complete visual overhaul with 4-quarter layout
+- `frontend/src/pages/Schedules.tsx` - Complete visual overhaul with dark table
+- `frontend/src/pages/Templates.tsx` - Complete visual overhaul with aligned cards + preview modal
 
-### Next Up: Integrations Page
+### Next Up: Phase 7 - Shared Components & Polish
 
-**File:** `frontend/src/pages/Integrations.tsx`
+**This is the FINAL PHASE of the UI/UX transformation.**
 
-**What to look for:**
-- OAuth connection cards for Slack/Google
-- Connection status indicators
-- Connect/Disconnect buttons
-- Empty state for no connections
+**Approach for Phase 7:**
+Before creating a redesign plan for each category, first **audit the codebase** and provide a comprehensive list of all instances, so the user knows exactly what to review after implementation.
+
+**Components to address:**
+
+1. **Modals & Dialogs** (NEXT)
+   - Already redesigned: Node Configuration Modal, Template Preview Modal
+   - Need to audit codebase for any other modals/dialogs
+
+2. **Toast Notifications**
+   - Currently using `react-hot-toast`
+   - Need to audit where toasts are used and their current styling
+
+3. **Loading States & Skeletons**
+   - Many pages already have dark-themed loading skeletons (added during page redesigns)
+   - Need to audit for any remaining light-themed loading states
+
+4. **Empty States**
+   - User believes Workflows List is the only empty state needing redesign
+   - Need to confirm by checking all pages with potential empty states
+   - Use empty test account: `victor6@test.com` / `password123`
 
 ### Tools Available
 
 - **Puppeteer MCP** installed for visual testing (navigate, screenshot, click, fill, evaluate)
 - Dev servers typically running: Frontend (5173), Backend (3001), Docker (MongoDB + Redis)
 
+### Test Accounts
+
+- **Main account (has data):** `victor@test.com` / `password123`
+- **Empty account (no data):** `victor6@test.com` / `password123`
+
 ### Important Context for Resuming
 
 1. User has given **complete creative autonomy** over UI/UX - maximize this
 2. **Zero functionality changes** - only visual/UX improvements
 3. Always verify changes visually using Puppeteer
-4. Test login: `victor@test.com` / `password123`
-5. The design should feel like a "craftsman's forge" - warm, industrial, premium
+4. The design should feel like a "craftsman's forge" - warm, industrial, premium
+5. For Phase 7, **audit first, then plan** - provide inventory before redesign plans
+6. Two modals already redesigned: Node Configuration Modal, Template Preview Modal

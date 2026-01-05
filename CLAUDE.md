@@ -100,9 +100,14 @@ interface INodeHandler {
 
 ### Frontend Architecture (React + Vite)
 
-**State Management:**
-- Zustand for global state (auth, workflow builder)
+**Tech Stack:**
+- React 18 + TypeScript + Vite
+- React Flow (reactflow) for workflow canvas visualization
+- Zustand for global state (auth, workflow builder stores)
 - TanStack Query for server state and caching
+- Socket.io-client for real-time updates
+- Tailwind CSS + GSAP + Motion for styling and animations
+- react-hot-toast for notifications
 
 **Key Pages:**
 - **WorkflowBuilder**: React Flow-based visual workflow editor with canvas and toolbar
@@ -165,11 +170,14 @@ See README.md for detailed OAuth setup instructions.
 ## Code Patterns
 
 **Variable Replacement:**
-The system supports `{{variable}}` syntax throughout node configurations. Variables are resolved from:
-- `context.variables`: User-defined variables
-- `context.trigger`: Trigger payload data
-- `context[nodeId]`: Output from previous nodes
-- `context.loop`: Loop iteration data (currentItem, currentIndex)
+The system supports `{{path}}` syntax throughout node configurations. Variables are resolved from:
+- `{{variables.name}}` or `{{variable.name}}`: User-defined variables
+- `{{trigger.field}}`: Trigger payload data (e.g., webhook body)
+- `{{nodeId.field}}`: Output from previous nodes by node ID
+- `{{loop.item}}`: Current iteration item
+- `{{loop.index}}`: Current iteration index (0-based)
+- `{{loop.count}}`: Total items in loop array
+- `{{loop.customVar}}`: Custom loop variable name if defined
 
 **Error Handling:**
 - Nodes can set `continueOnError: true` to proceed on failure
@@ -193,8 +201,18 @@ The system supports `{{variable}}` syntax throughout node configurations. Variab
 - Topological sort ensures correct node execution order
 - Loop nodes support nested iterations and branch conditions
 
----
+## Key File Paths
 
-## Session Context
+**Backend Core:**
+- `backend/src/workflows/services/workflow-executor.service.ts`: Main execution engine
+- `backend/src/workflows/services/node-handler-registry.service.ts`: Handler registration
+- `backend/src/workflows/handlers/`: Node type implementations
+- `backend/src/workflows/utils/variable-replacement.util.ts`: Variable resolution logic
+- `backend/src/executions/gateways/execution.gateway.ts`: WebSocket gateway
 
-> **Purpose:** This section maintains continuity between development sessions. Update this at the end of each session.
+**Frontend Core:**
+- `frontend/src/pages/WorkflowBuilder.tsx`: Visual workflow editor
+- `frontend/src/store/workflow.store.ts`: Workflow state management
+- `frontend/src/store/auth.store.ts`: Auth state with localStorage persistence
+- `frontend/src/hooks/useExecutionSocket.ts`: Real-time execution updates
+- `frontend/src/types/workflow.types.ts`: Workflow type definitions

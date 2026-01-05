@@ -255,25 +255,25 @@ const WorkflowsList = () => {
       <div className="p-6">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="h-6 w-40 animate-pulse rounded bg-slate-200" />
-            <div className="mt-2 h-4 w-64 animate-pulse rounded bg-slate-200" />
+            <div className="h-6 w-40 animate-pulse rounded bg-forge-800/60" />
+            <div className="mt-2 h-4 w-64 animate-pulse rounded bg-forge-800/40" />
           </div>
           <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-            <div className="h-9 w-64 animate-pulse rounded bg-slate-200" />
-            <div className="h-9 w-32 animate-pulse rounded bg-slate-200" />
-            <div className="h-9 w-32 animate-pulse rounded bg-slate-200" />
+            <div className="h-9 w-64 animate-pulse rounded-lg bg-forge-800/60" />
+            <div className="h-9 w-32 animate-pulse rounded-lg bg-forge-800/60" />
+            <div className="h-9 w-32 animate-pulse rounded-lg bg-forge-800/60" />
           </div>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={index}
-              className="h-40 animate-pulse rounded-lg border border-slate-200 bg-white p-5"
+              className="h-40 animate-pulse rounded-xl border border-forge-700/50 bg-forge-900/80 p-5"
             >
-              <div className="mb-4 h-5 w-24 rounded bg-slate-200" />
-              <div className="mb-2 h-4 w-full rounded bg-slate-100" />
-              <div className="mb-2 h-4 w-5/6 rounded bg-slate-100" />
-              <div className="mt-auto h-4 w-1/3 rounded bg-slate-200" />
+              <div className="mb-4 h-5 w-24 rounded bg-forge-800/60" />
+              <div className="mb-2 h-4 w-full rounded bg-forge-800/40" />
+              <div className="mb-2 h-4 w-5/6 rounded bg-forge-800/40" />
+              <div className="mt-auto h-4 w-1/3 rounded bg-forge-800/60" />
             </div>
           ))}
         </div>

@@ -9,11 +9,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 disabled:bg-blue-400',
+    'bg-gradient-to-r from-ember-500 to-ember-400 text-forge-950 font-semibold hover:from-ember-400 hover:to-ember-300 focus:ring-ember-500/50 shadow-lg shadow-ember-500/20 hover:shadow-ember-500/30 disabled:from-ember-600 disabled:to-ember-500 disabled:opacity-60',
   secondary:
-    'bg-gray-200 text-gray-800 hover:bg-gray-300 focus:ring-gray-400 disabled:bg-gray-200',
+    'bg-forge-800/60 text-forge-300 border border-forge-700/50 hover:bg-forge-700/60 hover:text-forge-200 focus:ring-forge-500/30 disabled:bg-forge-800/40 disabled:text-forge-500',
   danger:
-    'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 disabled:bg-red-400',
+    'bg-red-600/90 text-white hover:bg-red-500 focus:ring-red-500/50 disabled:bg-red-600/50',
 };
 
 const Button: React.FC<ButtonProps> = ({

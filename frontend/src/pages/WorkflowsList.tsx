@@ -12,6 +12,7 @@ import {
   Upload,
   History,
   FileText,
+  Workflow,
 } from 'lucide-react';
 
 import Button from '../components/Button';
@@ -365,19 +366,22 @@ const WorkflowsList = () => {
       </div>
 
       {workflowsData.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-200 bg-white px-6 py-10 text-center shadow-sm">
-          <h2 className="text-xl font-semibold text-gray-900">No workflows yet</h2>
-          <p className="mt-2 max-w-md text-sm text-gray-600">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-forge-700/50 bg-forge-900/60 backdrop-blur-sm px-6 py-12 text-center">
+          <div className="p-4 rounded-full bg-forge-800/60 border border-forge-700/50 mb-4">
+            <Workflow className="h-10 w-10 text-forge-400" />
+          </div>
+          <h2 className="text-xl font-semibold text-forge-50">No workflows yet</h2>
+          <p className="mt-2 max-w-md text-sm text-forge-400">
             Create a new workflow or start with a template.
           </p>
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Button onClick={handleCreateNew} icon={Plus}>
               Create Blank Workflow
             </Button>
             <button
               type="button"
               onClick={() => navigate('/templates')}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-forge-700/50 bg-forge-800/60 px-4 py-2 text-sm font-semibold text-forge-300 transition hover:bg-forge-700/60 hover:border-forge-600/50 hover:text-forge-200 focus:outline-none focus:ring-2 focus:ring-ember-500/30"
             >
               <FileText size={16} />
               Browse Templates

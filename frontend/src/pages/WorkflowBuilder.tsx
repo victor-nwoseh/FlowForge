@@ -581,23 +581,31 @@ const WorkflowBuilder = () => {
       toast(
         (t) => (
           <div className="text-sm">
-            <div className="font-semibold text-yellow-800">
+            <div className="font-semibold text-amber-300">
               Missing branch on condition node
             </div>
-            <div className="text-yellow-700">
+            <div className="text-amber-200/80">
               Add both True and False connections: {labels}
               {incomplete.length > 3 ? '...' : ''}
             </div>
             <button
               type="button"
-              className="mt-2 text-xs font-semibold text-indigo-600"
+              className="mt-2 text-xs font-semibold text-ember-300 hover:text-ember-200 transition-colors"
               onClick={() => toast.dismiss(t.id)}
             >
               Dismiss
             </button>
           </div>
         ),
-        { duration: 6000, style: { background: '#fefce8', border: '1px solid #facc15' } },
+        {
+          duration: 6000,
+          style: {
+            background: 'rgba(35, 31, 28, 0.95)',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            backdropFilter: 'blur(12px)',
+          },
+          icon: '⚠️',
+        },
       );
     }
 

@@ -19,7 +19,31 @@ ReactDOM.createRoot(rootElement).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <App />
-        <Toaster position="bottom-right" />
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: 'rgba(35, 31, 28, 0.95)',
+              color: '#f5f2ef',
+              border: '1px solid rgba(46, 41, 36, 0.5)',
+              borderRadius: '12px',
+              backdropFilter: 'blur(12px)',
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.4)',
+            },
+            success: {
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#231f1c',
+              },
+            },
+            error: {
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#231f1c',
+              },
+            },
+          }}
+        />
       </BrowserRouter>
     </QueryClientProvider>
   </React.StrictMode>,

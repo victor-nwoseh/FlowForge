@@ -15,4 +15,5 @@ module.exports = {
   ],
   coverageDirectory: './coverage',
   moduleFileExtensions: ['js', 'json', 'ts'],
+  maxWorkers: 1,
 };

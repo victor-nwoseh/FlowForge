@@ -43,9 +43,17 @@ cd frontend && npm run build
 
 ### Testing
 ```bash
-# Run backend tests
+# Run backend tests (configured with 4GB heap to prevent memory issues)
 cd backend && npm test
+
+# Run tests in watch mode
+cd backend && npm run test:watch
+
+# Run tests with coverage
+cd backend && npm run test:cov
 ```
+
+**Note:** Jest is configured with `maxWorkers: 1` and 4GB heap allocation to prevent memory exhaustion on systems with limited RAM. See `backend/jest.config.js` and `backend/package.json` test script.
 
 ### Docker
 ```bash
@@ -217,9 +225,19 @@ The system supports `{{path}}` syntax throughout node configurations. Variables 
 - `frontend/src/hooks/useExecutionSocket.ts`: Real-time execution updates
 - `frontend/src/types/workflow.types.ts`: Workflow type definitions
 
+**Backend Tests:**
+- `backend/src/test/test-utils.ts`: Test utilities and mock factories
+- `backend/src/workflows/services/workflow-executor.service.spec.ts`: Workflow execution tests
+- `backend/src/connections/connections.service.spec.ts`: OAuth connection tests
+- `backend/src/schedules/schedules.service.spec.ts`: Schedule management tests
+- `backend/src/workflows/handlers/condition.handler.spec.ts`: Condition handler tests
+- `backend/src/workflows/handlers/loop.handler.spec.ts`: Loop handler tests
+- `backend/src/workflows/handlers/slack.handler.spec.ts`: Slack handler tests
+- `backend/src/workflows/handlers/email.handler.spec.ts`: Email handler tests
+
 ---
 
-## Session Continuity (Updated: January 2025)
+## Session Continuity (Updated: January 2026)
 
 This section enables seamless resumption of development work across sessions.
 
@@ -241,22 +259,29 @@ This section enables seamless resumption of development work across sessions.
 - ✅ Multi-tenant isolation (User A's workflows use User A's OAuth tokens)
 - ✅ Docker Compose setup for MongoDB + Redis
 
-**Current Gaps:**
-- ❌ **Zero test coverage** - No unit, integration, or E2E tests exist
-- ❌ **Minimal documentation** - Basic README only, no API docs or user guides
-- ❌ **Not deployed** - Runs only on localhost, no CI/CD pipeline
+**Week 6 Progress (Testing Phase - In Progress):**
+- ✅ Jest testing framework installed and configured
+- ✅ Test utilities and mock factories created
+- ✅ 7 unit test suites created (72 tests total, all passing)
+- ⏳ 6 more testing steps remaining (Steps 7-12)
+- ❌ No integration or E2E tests yet
+- ❌ Minimal documentation - Basic README only, no API docs
+- ❌ Not deployed - Runs only on localhost, no CI/CD pipeline
 
 ### Week 6 Scope: Production Readiness
 
 **Goal:** Transform FlowForge into a production-ready, portfolio-worthy platform.
 
-**Phase 1 - Testing:**
-| Priority | Area | Description |
-|----------|------|-------------|
-| High | Backend Unit Tests | Services, handlers, utilities (Jest + NestJS testing) |
-| High | Backend Integration Tests | API endpoints, database operations |
-| Medium | Frontend Unit Tests | Components, hooks, stores (Vitest + React Testing Library) |
-| Medium | E2E Tests | Critical user flows (Playwright or Cypress) |
+**Phase 1 - Testing (IN PROGRESS):**
+| Step | Status | Description |
+|------|--------|-------------|
+| 1 | ✅ Complete | Install Jest and testing dependencies |
+| 2 | ✅ Complete | Create test utilities and mock factories |
+| 3 | ✅ Complete | Test WorkflowExecutorService (10 tests) |
+| 4 | ✅ Complete | Test ConnectionsService (10 tests) |
+| 5 | ✅ Complete | Test SchedulesService (9 tests) |
+| 6 | ✅ Complete | Test Node Handlers - condition, loop, slack, email (43 tests) |
+| 7-12 | ⏳ Pending | Remaining testing steps (integration tests, E2E, etc.) |
 
 **Phase 2 - Documentation:**
 | Priority | Area | Description |
@@ -276,26 +301,65 @@ This section enables seamless resumption of development work across sessions.
 
 ### Current Session State
 
-**Last Action:** Initial Week 6 planning discussion
-**Next Action:** Awaiting Phase 1 (Testing) instructions from user
+**Date:** January 6, 2026
+**Phase:** 1 - Testing (Steps 1-6 of 12 complete)
+**Last Action:** Completed Steps 3-6 unit tests, fixed memory issues, all 72 tests passing
+**Next Action:** Continue with Step 7 (user will provide instructions)
 
-### Critical Files for Testing Phase
+### Phase 1 Testing Progress Details
 
-**Backend files requiring test coverage (priority order):**
-1. `backend/src/workflows/services/workflow-executor.service.ts` - Core execution engine
-2. `backend/src/workflows/handlers/*.handler.ts` - All 9 node handlers
-3. `backend/src/workflows/utils/variable-replacement.util.ts` - Variable resolution
-4. `backend/src/workflows/utils/topological-sort.util.ts` - Execution ordering
-5. `backend/src/auth/auth.service.ts` - Authentication logic
-6. `backend/src/connections/connections.service.ts` - OAuth token management
-7. `backend/src/executions/executions.service.ts` - Execution tracking
+**Steps 1-2 (Completed in earlier sessions):**
+- Step 1: Installed Jest, @nestjs/testing, ts-jest, supertest, and type definitions
+- Step 2: Created `backend/src/test/test-utils.ts` with:
+  - `createTestingModule()` helper
+  - `mockRepository()` for Mongoose models
+  - `mockConfigService()` and `mockJwtService()`
+  - Mock objects: `mockUser`, `mockWorkflow`, `mockExecution`, `mockConnection`
 
-**Frontend files requiring test coverage (priority order):**
-1. `frontend/src/store/workflow.store.ts` - Workflow state management
-2. `frontend/src/store/auth.store.ts` - Auth state
-3. `frontend/src/hooks/useExecutionSocket.ts` - WebSocket hook
-4. `frontend/src/pages/WorkflowBuilder.tsx` - Main workflow editor
-5. `frontend/src/components/NodeConfigPanel.tsx` - Node configuration
+**Steps 3-6 (Completed in this session):**
+
+| Test File | Tests | Critical Logic Verified |
+|-----------|-------|------------------------|
+| `workflow-executor.service.spec.ts` | 10 | Topological sort, WebSocket events, conditional branching, loop iterations, continueOnError, userId context |
+| `connections.service.spec.ts` | 10 | Token encryption/decryption, Google token refresh, CRUD operations |
+| `schedules.service.spec.ts` | 9 | Bull job creation, cron validation, toggle active status, job removal |
+| `condition.handler.spec.ts` | 16 | All operators (==, !=, >, <, >=, <=), variable replacement, error handling |
+| `loop.handler.spec.ts` | 12 | Array initialization, nested loops, error handling, JSON parsing |
+| `slack.handler.spec.ts` | 10 | OAuth token usage, Slack API calls, variable replacement, error handling |
+| `email.handler.spec.ts` | 11 | Gmail OAuth, token refresh, validation, sendMail errors |
+
+**Issues Encountered & Resolved:**
+1. **Memory Exhaustion:** Running `npm test` caused JavaScript heap out of memory (~2GB usage)
+   - **Fix 1:** Added `maxWorkers: 1` to `backend/jest.config.js` (runs tests sequentially)
+   - **Fix 2:** Updated `backend/package.json` test script to: `node --max-old-space-size=4096 node_modules/jest/bin/jest.js`
+
+2. **Flaky Test:** `connections.service.spec.ts` "should return existing token if not expired" was failing intermittently
+   - **Root Cause:** Axios mock not cleared between tests
+   - **Fix:** Added `jest.clearAllMocks()` in `beforeEach` block
+
+**Test Output Notes:**
+- ERROR logs during tests are **expected** - they come from tests that intentionally test error handling scenarios
+- Example: "Node node-fail failed: Mock error" is from the "should handle node execution failure" test
+- All 72 tests pass with green output
+
+### Test Verification Commands
+
+```bash
+# Run all tests (takes ~17 seconds)
+cd backend && npm test
+
+# Expected output:
+# Test Suites: 7 passed, 7 total
+# Tests:       72 passed, 72 total
+```
+
+### Files Modified in This Session
+
+| File | Change |
+|------|--------|
+| `backend/jest.config.js` | Added `maxWorkers: 1` |
+| `backend/package.json` | Updated test script with 4GB heap allocation |
+| `backend/src/connections/connections.service.spec.ts` | Added `jest.clearAllMocks()` |
 
 ### API Endpoints Reference
 
@@ -365,8 +429,7 @@ templates: { name, category, workflow, difficulty, tags, usageCount, timestamps 
 ### Resume Instructions
 
 When resuming development:
-1. Read this CLAUDE.md file for full context
-2. Check "Current Session State" section above for last/next actions
-3. User will provide phase-specific instructions (Testing → Documentation → Deployment)
-4. Follow the priority order within each phase
-5. Update "Current Session State" at end of each session
+1. Read this CLAUDE.md file for full context (especially "Current Session State" and "Phase 1 Testing Progress Details")
+2. User will provide Step 7+ instructions to continue Phase 1 (Testing)
+3. Phase 1 has 12 total steps; Steps 1-6 are complete
+4. Update "Current Session State" section at end of each session

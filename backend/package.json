@@ -7,7 +7,7 @@
     "build": "nest build",
     "test": "node --max-old-space-size=4096 node_modules/jest/bin/jest.js",
     "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
+    "test:cov": "node --max-old-space-size=4096 node_modules/jest/bin/jest.js --coverage",
     "test:e2e": "node --max-old-space-size=4096 node_modules/jest/bin/jest.js --config ./test/jest-e2e.json"
   },
   "dependencies": {

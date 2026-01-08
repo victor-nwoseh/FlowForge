@@ -299,6 +299,7 @@ This section enables seamless resumption of development work across sessions.
 | 9 | ✅ Complete | E2E: Schedules API tests (10 tests) |
 | 10 | ✅ Complete | E2E: Executions API tests (9 tests) |
 | 11 | ✅ Complete | E2E: WebSocket real-time tests (18 tests) |
+| 12 | ✅ Complete | Coverage reporting configured |
 
 **Phase 2 - Documentation:**
 | Priority | Area | Description |
@@ -319,22 +320,25 @@ This section enables seamless resumption of development work across sessions.
 ### Current Session State
 
 **Date:** January 8, 2026
-**Phase:** 1 - Testing (COMPLETE)
-**Last Action:** Completed Steps 7-11 integration tests, all tests passing
-**Next Action:** Phase 2 - Documentation (user will provide instructions)
+**Phase:** Phase 1 COMPLETE - Ready for Phase 2 (Documentation)
+**Last Action:** Verified Step 12 - ran `npm run test:cov` and `npm run test:e2e`, confirmed all 124 tests pass, coverage >70% on critical services
+**Next Action:** Begin Phase 2 - Documentation (README overhaul, API docs, architecture diagrams)
 
-### Phase 1 Testing Progress Details
+### Phase 1 Testing - COMPLETE SUMMARY
 
-**Steps 1-2 (Completed in earlier sessions):**
-- Step 1: Installed Jest, @nestjs/testing, ts-jest, supertest, and type definitions
-- Step 2: Created `backend/src/test/test-utils.ts` with:
-  - `createTestingModule()` helper
-  - `mockRepository()` for Mongoose models
-  - `mockConfigService()` and `mockJwtService()`
-  - Mock objects: `mockUser`, `mockWorkflow`, `mockExecution`, `mockConnection`
+**Final Test Results (Verified January 8, 2026):**
+- **Unit Tests:** 7 suites, 72 tests - ALL PASSING
+- **E2E Tests:** 5 suites, 52 tests - ALL PASSING
+- **Total:** 12 suites, 124 tests
 
-**Steps 3-6 (Completed in this session):**
+**Test Commands:**
+```bash
+cd backend && npm test        # Unit tests (~24s)
+cd backend && npm run test:e2e    # E2E tests (~27s)
+cd backend && npm run test:cov    # Coverage report
+```
 
+**Unit Test Suites (72 tests):**
 | Test File | Tests | Critical Logic Verified |
 |-----------|-------|------------------------|
 | `workflow-executor.service.spec.ts` | 10 | Topological sort, WebSocket events, conditional branching, loop iterations, continueOnError, userId context |
@@ -345,57 +349,43 @@ This section enables seamless resumption of development work across sessions.
 | `slack.handler.spec.ts` | 10 | OAuth token usage, Slack API calls, variable replacement, error handling |
 | `email.handler.spec.ts` | 11 | Gmail OAuth, token refresh, validation, sendMail errors |
 
-**Issues Encountered & Resolved:**
-1. **Memory Exhaustion:** Running `npm test` caused JavaScript heap out of memory (~2GB usage)
-   - **Fix 1:** Added `maxWorkers: 1` to `backend/jest.config.js` (runs tests sequentially)
-   - **Fix 2:** Updated `backend/package.json` test script to: `node --max-old-space-size=4096 node_modules/jest/bin/jest.js`
+**E2E Test Suites (52 tests):**
+| Test File | Tests | Description |
+|-----------|-------|-------------|
+| `workflows.e2e-spec.ts` | 9 | CRUD operations, execute workflow, user isolation |
+| `oauth.e2e-spec.ts` | 6 | Slack/Google OAuth redirects and callbacks |
+| `schedules.e2e-spec.ts` | 10 | Create, toggle, delete schedules with Bull jobs |
+| `executions.e2e-spec.ts` | 9 | List, filter by workflowId, user isolation |
+| `websocket.e2e-spec.ts` | 18 | Socket.io connection, events, room isolation |
 
-2. **Flaky Test:** `connections.service.spec.ts` "should return existing token if not expired" was failing intermittently
-   - **Root Cause:** Axios mock not cleared between tests
-   - **Fix:** Added `jest.clearAllMocks()` in `beforeEach` block
+**Coverage Results (All Critical Services >70%):**
+| Service | Lines | Status |
+|---------|-------|--------|
+| `workflow-executor.service.ts` | 78.96% | ✅ |
+| `connections.service.ts` | 89.65% | ✅ |
+| `schedules.service.ts` | 83.33% | ✅ |
+| `condition.handler.ts` | 95% | ✅ |
+| `loop.handler.ts` | 97.36% | ✅ |
+| `email.handler.ts` | 97.61% | ✅ |
+| `slack.handler.ts` | 83.72% | ✅ |
 
-**Test Output Notes:**
-- ERROR logs during tests are **expected** - they come from tests that intentionally test error handling scenarios
-- Example: "Node node-fail failed: Mock error" is from the "should handle node execution failure" test
-- All 72 tests pass with green output
+**Test Infrastructure Files:**
+| File | Purpose |
+|------|---------|
+| `backend/jest.config.js` | Unit test config with `maxWorkers: 1` |
+| `backend/test/jest-e2e.json` | E2E test config with `forceExit: true` |
+| `backend/test/setup.ts` | E2E environment setup |
+| `backend/test/test-helpers.ts` | Utilities: `registerTestUser()`, `createWorkflow()`, `generateObjectId()` |
+| `backend/src/test/test-utils.ts` | Unit test mocks: `mockRepository()`, `mockConfigService()`, etc. |
 
-### Test Verification Commands
+**Known Issues Resolved:**
+1. **Memory Exhaustion:** Fixed with `maxWorkers: 1` + 4GB heap allocation
+2. **Jest Not Exiting:** Fixed with `forceExit: true` in jest-e2e.json
+3. **Supertest Import:** Use `import request from 'supertest'` (not `* as request`)
+4. **E2E Node Types:** Use `webhook`/`http` (not `trigger`/`action`)
+5. **Execution userId:** Pass strings to Mongoose (auto-converts to ObjectId)
 
-```bash
-# Run unit tests (takes ~17 seconds)
-cd backend && npm test
-
-# Expected output:
-# Test Suites: 7 passed, 7 total
-# Tests:       72 passed, 72 total
-
-# Run e2e integration tests (takes ~60 seconds)
-cd backend && npm run test:e2e
-
-# Expected output:
-# Test Suites: 5 passed, 5 total
-# Tests:       52 passed, 52 total
-```
-
-### Files Created/Modified in This Session
-
-**E2E Test Files Created:**
-| File | Tests | Description |
-|------|-------|-------------|
-| `backend/test/jest-e2e.json` | - | Jest config for e2e tests |
-| `backend/test/setup.ts` | - | E2E test environment setup |
-| `backend/test/test-helpers.ts` | - | Test utilities (register user, create workflow, etc.) |
-| `backend/test/workflows.e2e-spec.ts` | 9 | CRUD, execute workflow, user isolation |
-| `backend/test/oauth.e2e-spec.ts` | 6 | Slack/Google OAuth redirects and callbacks |
-| `backend/test/schedules.e2e-spec.ts` | 10 | Create, toggle, delete schedules with Bull jobs |
-| `backend/test/executions.e2e-spec.ts` | 9 | List, filter, user isolation |
-| `backend/test/websocket.e2e-spec.ts` | 18 | Connect, events, user room isolation |
-
-**Files Modified:**
-| File | Change |
-|------|--------|
-| `backend/package.json` | Added `test:e2e` script with 4GB heap, added `socket.io-client` devDep |
-| `backend/jest.config.js` | Added `maxWorkers: 1` |
+**Test Output Note:** ERROR logs during tests are EXPECTED - they verify error handling works correctly
 
 ### API Endpoints Reference
 
@@ -465,7 +455,16 @@ templates: { name, category, workflow, difficulty, tags, usageCount, timestamps 
 ### Resume Instructions
 
 When resuming development:
-1. Read this CLAUDE.md file for full context (especially "Current Session State" and "Phase 1 Testing Progress Details")
-2. User will provide Step 7+ instructions to continue Phase 1 (Testing)
-3. Phase 1 has 12 total steps; Steps 1-6 are complete
-4. Update "Current Session State" section at end of each session
+1. Read this CLAUDE.md file for full context (especially "Current Session State")
+2. **Phase 1 (Testing) is 100% COMPLETE** - 124 tests passing, coverage verified
+3. **Next: Phase 2 (Documentation)** - User will provide specific instructions
+4. Phase 2 priorities: README overhaul, API docs (Swagger), architecture diagrams, user guides
+5. Update "Current Session State" section at end of each session
+
+### Quick Verification Commands
+
+Before starting new work, verify tests still pass:
+```bash
+cd backend && npm test && npm run test:e2e
+# Expected: 72 unit tests + 52 e2e tests = 124 total, all passing
+```

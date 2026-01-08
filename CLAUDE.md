@@ -43,8 +43,11 @@ cd frontend && npm run build
 
 ### Testing
 ```bash
-# Run backend tests (configured with 4GB heap to prevent memory issues)
+# Run backend unit tests (configured with 4GB heap to prevent memory issues)
 cd backend && npm test
+
+# Run e2e integration tests (requires MongoDB + Redis running)
+cd backend && npm run test:e2e
 
 # Run tests in watch mode
 cd backend && npm run test:watch
@@ -54,6 +57,8 @@ cd backend && npm run test:cov
 ```
 
 **Note:** Jest is configured with `maxWorkers: 1` and 4GB heap allocation to prevent memory exhaustion on systems with limited RAM. See `backend/jest.config.js` and `backend/package.json` test script.
+
+**Total Test Coverage:** 124 tests across 12 test suites (7 unit + 5 e2e)
 
 ### Docker
 ```bash
@@ -225,7 +230,7 @@ The system supports `{{path}}` syntax throughout node configurations. Variables 
 - `frontend/src/hooks/useExecutionSocket.ts`: Real-time execution updates
 - `frontend/src/types/workflow.types.ts`: Workflow type definitions
 
-**Backend Tests:**
+**Backend Unit Tests:**
 - `backend/src/test/test-utils.ts`: Test utilities and mock factories
 - `backend/src/workflows/services/workflow-executor.service.spec.ts`: Workflow execution tests
 - `backend/src/connections/connections.service.spec.ts`: OAuth connection tests
@@ -234,6 +239,14 @@ The system supports `{{path}}` syntax throughout node configurations. Variables 
 - `backend/src/workflows/handlers/loop.handler.spec.ts`: Loop handler tests
 - `backend/src/workflows/handlers/slack.handler.spec.ts`: Slack handler tests
 - `backend/src/workflows/handlers/email.handler.spec.ts`: Email handler tests
+
+**Backend E2E Tests:**
+- `backend/test/test-helpers.ts`: E2E test utilities (user registration, workflow creation)
+- `backend/test/workflows.e2e-spec.ts`: Workflows API endpoints tests
+- `backend/test/oauth.e2e-spec.ts`: OAuth authorization and callback tests
+- `backend/test/schedules.e2e-spec.ts`: Schedules API tests
+- `backend/test/executions.e2e-spec.ts`: Executions API tests
+- `backend/test/websocket.e2e-spec.ts`: WebSocket real-time event tests
 
 ---
 
@@ -259,12 +272,12 @@ This section enables seamless resumption of development work across sessions.
 - ✅ Multi-tenant isolation (User A's workflows use User A's OAuth tokens)
 - ✅ Docker Compose setup for MongoDB + Redis
 
-**Week 6 Progress (Testing Phase - In Progress):**
+**Week 6 Progress (Testing Phase - COMPLETE):**
 - ✅ Jest testing framework installed and configured
 - ✅ Test utilities and mock factories created
 - ✅ 7 unit test suites created (72 tests total, all passing)
-- ⏳ 6 more testing steps remaining (Steps 7-12)
-- ❌ No integration or E2E tests yet
+- ✅ 5 e2e integration test suites created (52 tests total, all passing)
+- ✅ **Total: 124 tests across 12 test suites**
 - ❌ Minimal documentation - Basic README only, no API docs
 - ❌ Not deployed - Runs only on localhost, no CI/CD pipeline
 
@@ -272,7 +285,7 @@ This section enables seamless resumption of development work across sessions.
 
 **Goal:** Transform FlowForge into a production-ready, portfolio-worthy platform.
 
-**Phase 1 - Testing (IN PROGRESS):**
+**Phase 1 - Testing (COMPLETE):**
 | Step | Status | Description |
 |------|--------|-------------|
 | 1 | ✅ Complete | Install Jest and testing dependencies |
@@ -281,7 +294,11 @@ This section enables seamless resumption of development work across sessions.
 | 4 | ✅ Complete | Test ConnectionsService (10 tests) |
 | 5 | ✅ Complete | Test SchedulesService (9 tests) |
 | 6 | ✅ Complete | Test Node Handlers - condition, loop, slack, email (43 tests) |
-| 7-12 | ⏳ Pending | Remaining testing steps (integration tests, E2E, etc.) |
+| 7 | ✅ Complete | E2E: Workflows API tests (9 tests) |
+| 8 | ✅ Complete | E2E: OAuth authorization tests (6 tests) |
+| 9 | ✅ Complete | E2E: Schedules API tests (10 tests) |
+| 10 | ✅ Complete | E2E: Executions API tests (9 tests) |
+| 11 | ✅ Complete | E2E: WebSocket real-time tests (18 tests) |
 
 **Phase 2 - Documentation:**
 | Priority | Area | Description |
@@ -301,10 +318,10 @@ This section enables seamless resumption of development work across sessions.
 
 ### Current Session State
 
-**Date:** January 6, 2026
-**Phase:** 1 - Testing (Steps 1-6 of 12 complete)
-**Last Action:** Completed Steps 3-6 unit tests, fixed memory issues, all 72 tests passing
-**Next Action:** Continue with Step 7 (user will provide instructions)
+**Date:** January 8, 2026
+**Phase:** 1 - Testing (COMPLETE)
+**Last Action:** Completed Steps 7-11 integration tests, all tests passing
+**Next Action:** Phase 2 - Documentation (user will provide instructions)
 
 ### Phase 1 Testing Progress Details
 
@@ -345,21 +362,40 @@ This section enables seamless resumption of development work across sessions.
 ### Test Verification Commands
 
 ```bash
-# Run all tests (takes ~17 seconds)
+# Run unit tests (takes ~17 seconds)
 cd backend && npm test
 
 # Expected output:
 # Test Suites: 7 passed, 7 total
 # Tests:       72 passed, 72 total
+
+# Run e2e integration tests (takes ~60 seconds)
+cd backend && npm run test:e2e
+
+# Expected output:
+# Test Suites: 5 passed, 5 total
+# Tests:       52 passed, 52 total
 ```
 
-### Files Modified in This Session
+### Files Created/Modified in This Session
 
+**E2E Test Files Created:**
+| File | Tests | Description |
+|------|-------|-------------|
+| `backend/test/jest-e2e.json` | - | Jest config for e2e tests |
+| `backend/test/setup.ts` | - | E2E test environment setup |
+| `backend/test/test-helpers.ts` | - | Test utilities (register user, create workflow, etc.) |
+| `backend/test/workflows.e2e-spec.ts` | 9 | CRUD, execute workflow, user isolation |
+| `backend/test/oauth.e2e-spec.ts` | 6 | Slack/Google OAuth redirects and callbacks |
+| `backend/test/schedules.e2e-spec.ts` | 10 | Create, toggle, delete schedules with Bull jobs |
+| `backend/test/executions.e2e-spec.ts` | 9 | List, filter, user isolation |
+| `backend/test/websocket.e2e-spec.ts` | 18 | Connect, events, user room isolation |
+
+**Files Modified:**
 | File | Change |
 |------|--------|
+| `backend/package.json` | Added `test:e2e` script with 4GB heap, added `socket.io-client` devDep |
 | `backend/jest.config.js` | Added `maxWorkers: 1` |
-| `backend/package.json` | Updated test script with 4GB heap allocation |
-| `backend/src/connections/connections.service.spec.ts` | Added `jest.clearAllMocks()` |
 
 ### API Endpoints Reference
 

@@ -57,12 +57,12 @@ MongoDB Atlas provides a free tier that's perfect for getting started.
 3. Select **Connect your application**
 4. Copy the connection string, it looks like:
    ```
-   mongodb+srv://flowforge-admin:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+   mongodb+srv://USERNAME:PASSWORD@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
    ```
-5. Replace `<password>` with your database user password
-6. Add the database name before the `?`:
+5. Replace `USERNAME` and `PASSWORD` with your database user credentials
+6. Add the database name `flowforge` before the `?`:
    ```
-   mongodb+srv://flowforge-admin:yourpassword@cluster0.xxxxx.mongodb.net/flowforge?retryWrites=true&w=majority
+   mongodb+srv://USERNAME:PASSWORD@cluster0.xxxxx.mongodb.net/flowforge?retryWrites=true&w=majority
    ```
 7. **Save this connection string** for your environment variables
 

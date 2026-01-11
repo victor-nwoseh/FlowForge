@@ -7,6 +7,28 @@ import * as cronParser from 'cron-parser';
 
 import { Schedule, ScheduleDocument } from './schemas/schedule.schema';
 
+/**
+ * SchedulesService - Manages cron-based workflow scheduling via Bull repeatable jobs.
+ *
+ * This service handles:
+ * - Creating scheduled triggers for workflows using cron expressions
+ * - Managing Bull queue repeatable jobs (create, remove, toggle)
+ * - Tracking last run and next run times for schedules
+ * - Per-user schedule isolation
+ *
+ * How it works:
+ * - When a schedule is created, a Bull repeatable job is registered with the cron expression
+ * - Bull automatically triggers the job at the scheduled times
+ * - The job processor (WorkflowExecutionProcessor) picks up the job and executes the workflow
+ * - After execution, updateLastRun() is called to track timing
+ *
+ * @example
+ * // Create a schedule that runs every day at 9am
+ * const schedule = await schedulesService.create(userId, workflowId, '0 9 * * *');
+ *
+ * // Toggle schedule off (pauses the Bull job)
+ * await schedulesService.toggle(scheduleId, userId, false);
+ */
 @Injectable()
 export class SchedulesService {
   constructor(
@@ -14,6 +36,10 @@ export class SchedulesService {
     @InjectQueue('workflow-execution') private readonly workflowQueue: Queue,
   ) {}
 
+  /**
+   * Validates that a cron expression has exactly 5 parts (minute hour day month weekday).
+   * @throws BadRequestException if format is invalid
+   */
   private validateCronExpression(cron: string) {
     const parts = cron.trim().split(/\s+/);
     if (parts.length !== 5) {
@@ -21,6 +47,11 @@ export class SchedulesService {
     }
   }
 
+  /**
+   * Computes the next run time for a cron expression.
+   * Uses cron-parser to calculate when the cron will next trigger.
+   * @returns Next run date, or null if parsing fails
+   */
   private computeNextRun(cronExpression: string, fromDate?: Date): Date | null {
     try {
       const interval = cronParser.parseExpression(cronExpression, {
@@ -32,6 +63,10 @@ export class SchedulesService {
     }
   }
 
+  /**
+   * Ensures nextRunAt is populated for active schedules.
+   * Computes from lastRunAt if available, otherwise from current time.
+   */
   private async hydrateScheduleTimes(schedule: ScheduleDocument): Promise<ScheduleDocument> {
     // Ensure nextRunAt is present for active schedules; compute from lastRunAt or now.
     if (schedule.isActive) {
@@ -49,6 +84,18 @@ export class SchedulesService {
     return schedule;
   }
 
+  /**
+   * Creates a new scheduled trigger for a workflow.
+   *
+   * Registers a Bull repeatable job that will trigger at the specified cron schedule.
+   * Only one schedule per workflow per user is allowed.
+   *
+   * @param userId - Owner's user ID
+   * @param workflowId - The workflow to schedule
+   * @param cronExpression - Standard 5-part cron expression (e.g., '0 9 * * *' for 9am daily)
+   * @returns The created schedule document
+   * @throws BadRequestException if cron is invalid or schedule already exists
+   */
   async create(userId: string, workflowId: string, cronExpression: string): Promise<Schedule> {
     this.validateCronExpression(cronExpression);
 
@@ -77,6 +124,7 @@ export class SchedulesService {
     return schedule;
   }
 
+  /** Lists all schedules for a user with populated workflow names */
   async findAllByUser(userId: string): Promise<Schedule[]> {
     const schedules = await this.scheduleModel
       .find({ userId })
@@ -87,6 +135,7 @@ export class SchedulesService {
     return Promise.all(schedules.map((s) => this.hydrateScheduleTimes(s)));
   }
 
+  /** Retrieves a single schedule by ID (with user ownership check) */
   async findOne(scheduleId: string, userId: string): Promise<Schedule> {
     const schedule = await this.scheduleModel
       .findOne({ _id: scheduleId, userId })
@@ -100,6 +149,10 @@ export class SchedulesService {
     return this.hydrateScheduleTimes(schedule);
   }
 
+  /**
+   * Deletes a schedule and removes its Bull repeatable job.
+   * @throws NotFoundException if schedule doesn't exist
+   */
   async delete(scheduleId: string, userId: string): Promise<void> {
     const schedule = await this.scheduleModel.findOne({ _id: scheduleId, userId });
     if (!schedule) {
@@ -113,6 +166,17 @@ export class SchedulesService {
     await this.scheduleModel.deleteOne({ _id: scheduleId, userId });
   }
 
+  /**
+   * Toggles a schedule's active status.
+   *
+   * When disabling: removes the Bull repeatable job (pauses scheduling)
+   * When enabling: creates a new Bull repeatable job (resumes scheduling)
+   *
+   * @param scheduleId - The schedule to toggle
+   * @param userId - Owner's user ID (for authorization)
+   * @param isActive - New active state
+   * @returns Updated schedule document
+   */
   async toggle(scheduleId: string, userId: string, isActive: boolean): Promise<Schedule> {
     const schedule = await this.scheduleModel.findOne({ _id: scheduleId, userId });
     if (!schedule) {
@@ -140,6 +204,11 @@ export class SchedulesService {
     return schedule;
   }
 
+  /**
+   * Updates the lastRunAt timestamp after a scheduled execution completes.
+   * Also recalculates the nextRunAt based on the new lastRunAt.
+   * Called by WorkflowExecutorService after scheduled workflow completion.
+   */
   async updateLastRun(workflowId: string): Promise<void> {
     const schedules = await this.scheduleModel.find({ workflowId }).exec();
     for (const sched of schedules) {

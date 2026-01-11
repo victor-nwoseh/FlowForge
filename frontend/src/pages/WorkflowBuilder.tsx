@@ -41,14 +41,49 @@ import type {
 } from '../types/workflow.types';
 import '../styles/workflow.css';
 
+/**
+ * React Flow node type mapping.
+ * All nodes use the CustomNode component which renders differently based on node.data.type
+ */
 const nodeTypes: NodeTypes = {
   custom: CustomNode,
 };
 
+/** Default zoom level when loading a workflow */
 const DEFAULT_ZOOM = 0.75;
+/** Auto-save delay in milliseconds (30 seconds) */
 const AUTO_SAVE_DELAY = 30000;
+/** Minimum time to show saving spinner for UX feedback */
 const MANUAL_SAVE_SPINNER_MS = 2000;
 
+/**
+ * WorkflowBuilder - Visual workflow editor page using React Flow.
+ *
+ * This is the main workflow creation and editing interface. It provides:
+ *
+ * Features:
+ * - Drag-and-drop node creation from the NodePalette
+ * - Visual node connection by dragging between handles
+ * - Node configuration via the NodeConfigPanel sidebar
+ * - Auto-save functionality (saves every 30 seconds when changes detected)
+ * - Real-time execution monitoring via WebSocket
+ * - Execution status visualization (node highlighting for success/failure)
+ *
+ * State Management:
+ * - Uses Zustand store (useWorkflowStore) for nodes/edges state
+ * - React Flow manages the canvas interactions
+ * - TanStack Query handles API mutations (save, execute)
+ *
+ * URL Patterns:
+ * - /workflows/new - Create new workflow
+ * - /workflows/:id - Edit existing workflow
+ *
+ * Key Components:
+ * - NodePalette: Left sidebar with draggable node types
+ * - ReactFlow: Central canvas for workflow visualization
+ * - NodeConfigPanel: Right sidebar for configuring selected node
+ * - WorkflowStats: Modal showing execution history statistics
+ */
 const WorkflowBuilder = () => {
   const { id: workflowId } = useParams<{ id?: string }>();
   const navigate = useNavigate();
@@ -89,6 +124,8 @@ const WorkflowBuilder = () => {
     [],
   );
 
+  // Zustand store state - manages workflow nodes, edges, and selection
+  // This is the single source of truth for the workflow being edited
   const {
     nodes,
     edges,
@@ -129,12 +166,17 @@ const WorkflowBuilder = () => {
   const [isPaletteCollapsed, setIsPaletteCollapsed] = useState(false);
   const [formErrors, setFormErrors] = useState<{ name?: string; description?: string }>({});
   const canExecuteWorkflow = Boolean(workflowId && workflowId !== 'new');
+
+  // Real-time execution monitoring via WebSocket
+  // Receives events as workflow executes: started, node-completed, progress, completed
   const { executionStarted, nodeCompleted, executionCompleted, progress } =
     useExecutionSocket();
+
+  // Execution state for visual feedback during workflow runs
   const [isExecuting, setIsExecuting] = useState(false);
   const [completedNodes, setCompletedNodes] = useState<
     Map<string, 'success' | 'failed'>
-  >(new Map());
+  >(new Map()); // Tracks node execution status for highlighting
   const [overlayStatus, setOverlayStatus] = useState<'success' | 'failed' | null>(null);
 
   const executeMutation = useMutation({

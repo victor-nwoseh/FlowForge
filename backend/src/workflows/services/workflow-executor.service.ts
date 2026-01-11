@@ -12,6 +12,7 @@ import { replaceVariablesInObject } from '../utils/variable-replacement.util';
 import { SchedulesService } from '../../schedules/schedules.service';
 import { ExecutionGateway } from '../../executions/gateways/execution.gateway';
 
+/** Keys that should be redacted from logs to prevent sensitive data exposure */
 const SENSITIVE_KEYS = [
   'password',
   'secret',
@@ -23,6 +24,29 @@ const SENSITIVE_KEYS = [
   'credential',
 ];
 
+/**
+ * WorkflowExecutorService - Core execution engine for FlowForge workflows.
+ *
+ * This service orchestrates the execution of workflows by:
+ * 1. Loading workflow definitions from the database
+ * 2. Sorting nodes in topological order based on edge dependencies
+ * 3. Executing each node through its registered handler
+ * 4. Managing execution context (variables, trigger data, node outputs)
+ * 5. Handling conditional branching and loop iterations
+ * 6. Emitting real-time WebSocket events for execution progress
+ * 7. Logging execution results and errors to the database
+ *
+ * @example
+ * // Execute a workflow manually
+ * const executionId = await workflowExecutor.executeWorkflow(
+ *   workflowId,
+ *   userId,
+ *   { customData: 'value' },
+ *   1,
+ *   undefined,
+ *   'manual'
+ * );
+ */
 @Injectable()
 export class WorkflowExecutorService {
   private readonly logger = new Logger(WorkflowExecutorService.name);
@@ -35,6 +59,22 @@ export class WorkflowExecutorService {
     private readonly executionGateway: ExecutionGateway,
   ) {}
 
+  /**
+   * Initiates a workflow execution.
+   *
+   * Creates an execution record in the database and starts the execution process.
+   * This is the main entry point for triggering workflow runs.
+   *
+   * @param workflowId - The MongoDB ObjectId of the workflow to execute
+   * @param userId - The ID of the user who owns the workflow (for OAuth token lookup)
+   * @param triggerData - Data passed from the trigger (webhook payload, manual input, etc.)
+   * @param attemptNumber - Current retry attempt (1 for first run, increments on retry)
+   * @param jobId - Bull queue job ID (if executed via queue)
+   * @param triggerSource - How the workflow was triggered: 'manual', 'webhook', or 'scheduled'
+   * @returns The execution ID (MongoDB ObjectId as string)
+   *
+   * @throws Error if workflow not found or execution fails
+   */
   async executeWorkflow(
     workflowId: string,
     userId: string,
@@ -71,6 +111,34 @@ export class WorkflowExecutorService {
     return execution._id.toString();
   }
 
+  /**
+   * Core execution logic that processes all nodes in a workflow.
+   *
+   * Execution Flow:
+   * 1. Load workflow definition from database
+   * 2. Perform topological sort to determine node execution order
+   * 3. Initialize execution context with trigger data
+   * 4. For each node in sorted order:
+   *    - Check if node is reachable (based on conditional branches)
+   *    - Get handler from registry
+   *    - Replace variables in node config ({{variable}} syntax)
+   *    - Execute handler and capture output
+   *    - Handle conditional branching (re-sort if branch taken)
+   *    - Handle loops (iterate over array items)
+   *    - Emit WebSocket events for real-time updates
+   *    - Log results to database
+   * 5. Mark execution as success or failed
+   *
+   * @param executionId - The execution record ID for logging
+   * @param workflowId - The workflow to execute
+   * @param userId - Owner's user ID for OAuth token lookup
+   * @param triggerData - Initial trigger payload
+   * @param attemptNumber - Retry attempt number
+   * @param jobId - Optional Bull queue job ID
+   * @param triggerSource - Source of the trigger
+   *
+   * @throws Error if any node fails (unless continueOnError is set)
+   */
   private async runExecution(
     executionId: string,
     workflowId: string,
@@ -107,8 +175,12 @@ export class WorkflowExecutorService {
         `Workflow ${workflowId} has ${workflow.nodes.length} nodes for execution ${executionId}`,
       );
 
+      // Track which branch (true/false) was taken for each condition node
+      // Used to filter edges during topological sort and reachability computation
       const branchSelections = new Map<string, 'true' | 'false'>();
 
+      // Edge filter function that respects branch selections from condition nodes
+      // Only allows edges that match the selected branch (true or false handle)
       const edgeFilter = (edge: any) => {
         if (!edge?.source || !edge?.target) {
           return false;
@@ -124,6 +196,11 @@ export class WorkflowExecutorService {
 
       const getFilteredEdges = () => (workflow.edges ?? []).filter(edgeFilter);
 
+      /**
+       * Computes the set of reachable node IDs from trigger/start nodes.
+       * Uses BFS traversal with filtered edges (respecting branch selections).
+       * Nodes not in this set will be skipped during execution.
+       */
       const computeReachable = (): Set<string> => {
         const filteredEdges = getFilteredEdges();
         const reachableSet = new Set<string>();
@@ -177,6 +254,11 @@ export class WorkflowExecutorService {
         return reachableSet;
       };
 
+      /**
+       * Computes the execution order for nodes inside a loop body.
+       * Returns nodes reachable from the loop node (excluding the loop itself)
+       * in topologically sorted order for iteration processing.
+       */
       const computeLoopTraversal = (
         loopNodeId: string,
       ): { order: string[]; reachable: Set<string> } => {
@@ -219,6 +301,8 @@ export class WorkflowExecutorService {
         return { order, reachable: reachableSet };
       };
 
+      // Perform initial topological sort to determine node execution order
+      // This ensures nodes are executed after their dependencies (upstream nodes)
       let sortedNodeIds = topologicalSort(
         workflow.nodes,
         workflow.edges ?? [],
@@ -237,6 +321,8 @@ export class WorkflowExecutorService {
         `Node execution order determined for execution ${executionId}: ${sortedNodeIds.join(', ')}`,
       );
 
+      // Initialize execution context - this object is passed to all node handlers
+      // and accumulates outputs from each node for downstream access via {{nodeId.field}}
       context = {
         variables: {},
         trigger: triggerData,

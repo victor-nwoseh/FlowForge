@@ -7,6 +7,7 @@ import { Model } from 'mongoose';
 import { encrypt, decrypt } from '../common/utils/encryption.util';
 import { Connection, ConnectionDocument } from './schemas/connection.schema';
 
+/** Summary view of a connection (without sensitive token data) */
 type ConnectionSummary = {
   service: Connection['service'];
   metadata: Connection['metadata'];
@@ -14,6 +15,31 @@ type ConnectionSummary = {
   hasToken: boolean;
 };
 
+/**
+ * ConnectionsService - Manages OAuth connections with encrypted token storage.
+ *
+ * This service handles:
+ * - Storing OAuth access tokens and refresh tokens (encrypted with AES-256)
+ * - Retrieving decrypted tokens for use in node handlers (Slack, Gmail, etc.)
+ * - Refreshing expired Google OAuth tokens automatically
+ * - Per-user isolation (User A cannot access User B's tokens)
+ *
+ * Security:
+ * - All tokens are encrypted at rest using the ENCRYPTION_KEY environment variable
+ * - Tokens are only decrypted when needed for API calls
+ * - Connection summaries (for UI) never include actual token values
+ *
+ * @example
+ * // Store a new Slack connection
+ * await connectionsService.create(userId, 'slack', {
+ *   accessToken: 'xoxb-...',
+ *   refreshToken: undefined,
+ * }, { teamName: 'My Workspace' });
+ *
+ * // Retrieve decrypted token for API use
+ * const connection = await connectionsService.findByUserAndService(userId, 'slack');
+ * // connection.accessToken is now decrypted
+ */
 @Injectable()
 export class ConnectionsService {
   private readonly encryptionKey: string;
@@ -32,6 +58,21 @@ export class ConnectionsService {
     this.encryptionKey = encryptionKey;
   }
 
+  /**
+   * Creates or updates an OAuth connection for a user.
+   *
+   * Tokens are encrypted before storage using AES-256 encryption.
+   * If a connection already exists for this user/service pair, it will be updated.
+   *
+   * @param userId - The user's MongoDB ObjectId
+   * @param service - Service identifier ('slack' | 'google')
+   * @param tokens - OAuth tokens to store
+   * @param tokens.accessToken - The access token (will be encrypted)
+   * @param tokens.refreshToken - Optional refresh token (will be encrypted)
+   * @param tokens.expiresAt - Optional token expiration date
+   * @param metadata - Optional service-specific metadata (teamName, email, etc.)
+   * @returns The created/updated connection document
+   */
   async create(
     userId: string,
     service: string,
@@ -58,6 +99,16 @@ export class ConnectionsService {
     return connection;
   }
 
+  /**
+   * Retrieves a connection with decrypted tokens for API use.
+   *
+   * This method is used by node handlers (Slack, Email, Sheets) to get
+   * the actual OAuth tokens needed for making API calls.
+   *
+   * @param userId - The user's MongoDB ObjectId
+   * @param service - Service identifier ('slack' | 'google')
+   * @returns Connection with decrypted tokens, or null if not found
+   */
   async findByUserAndService(userId: string, service: string): Promise<Connection | null> {
     const connection = await this.connectionModel.findOne({ userId, service });
 
@@ -74,6 +125,15 @@ export class ConnectionsService {
     return connectionObj as Connection;
   }
 
+  /**
+   * Lists all connections for a user (without exposing tokens).
+   *
+   * Returns connection summaries safe for displaying in the UI.
+   * Actual token values are never included in the response.
+   *
+   * @param userId - The user's MongoDB ObjectId
+   * @returns Array of connection summaries with service, metadata, and hasToken flag
+   */
   async findAllByUser(userId: string): Promise<ConnectionSummary[]> {
     const connections = await this.connectionModel
       .find({ userId })
@@ -88,12 +148,38 @@ export class ConnectionsService {
     }));
   }
 
+  /**
+   * Removes an OAuth connection for a user.
+   *
+   * @param userId - The user's MongoDB ObjectId
+   * @param service - Service identifier ('slack' | 'google')
+   * @returns True if a connection was deleted, false if not found
+   */
   async delete(userId: string, service: string): Promise<boolean> {
     const result = await this.connectionModel.deleteOne({ userId, service });
 
     return result.deletedCount === 1;
   }
 
+  /**
+   * Refreshes an expired Google OAuth token.
+   *
+   * This method checks if the current token is expired and, if so,
+   * uses the refresh token to obtain a new access token from Google.
+   * The new token is encrypted and stored in the database.
+   *
+   * Flow:
+   * 1. Check if token is still valid (not expired)
+   * 2. If valid, return current connection with decrypted tokens
+   * 3. If expired, call Google's token endpoint with refresh token
+   * 4. Encrypt and store new access token
+   * 5. Return updated connection with decrypted tokens
+   *
+   * @param userId - The user's MongoDB ObjectId
+   * @returns Connection with refreshed, decrypted tokens
+   * @throws NotFoundException if no Google connection exists
+   * @throws Error if refresh token is missing or Google API fails
+   */
   async refreshGoogleToken(userId: string): Promise<Connection> {
     const connection = await this.connectionModel.findOne({ userId, service: 'google' });
 

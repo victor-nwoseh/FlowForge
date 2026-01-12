@@ -1,0 +1,38 @@
+# Dependencies - will be installed in container
+node_modules
+
+# Build output - will be generated in container
+dist
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+*.log
+coverage/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+
+# Tests (not needed in production image)
+**/*.spec.ts
+**/*.test.ts
+test/
+jest.config.js
+jest-e2e.json
+
+# Documentation
+*.md
+docs/
+
+# Misc
+.DS_Store
+Thumbs.db

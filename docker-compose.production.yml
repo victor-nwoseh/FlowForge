@@ -1,0 +1,128 @@
+# FlowForge - Production Docker Compose
+# Use this for local production testing or self-hosted deployments
+#
+# Usage:
+#   docker-compose -f docker-compose.production.yml build
+#   docker-compose -f docker-compose.production.yml up -d
+#
+# For cloud deployments (Railway, Render), use managed MongoDB Atlas and Redis Cloud instead
+
+services:
+  # =============================================================================
+  # Backend - NestJS API Server
+  # =============================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.production
+    container_name: flowforge-backend
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./backend/.env.production
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongo:27017/flowforge
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - flowforge-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # =============================================================================
+  # Frontend - React/Vite served by Nginx
+  # =============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.production
+      args:
+        - VITE_API_URL=http://localhost:3001/api
+        - VITE_WS_URL=ws://localhost:3001
+    container_name: flowforge-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - flowforge-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # =============================================================================
+  # MongoDB - Document Database
+  # For production, consider using MongoDB Atlas instead
+  # =============================================================================
+  mongo:
+    image: mongo:7
+    container_name: flowforge-mongo
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=flowforge
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+    networks:
+      - flowforge-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # =============================================================================
+  # Redis - Queue and Cache
+  # For production, consider using Redis Cloud instead
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: flowforge-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - flowforge-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    command: redis-server --appendonly yes
+
+# =============================================================================
+# Volumes - Persistent Data Storage
+# =============================================================================
+volumes:
+  mongo_data:
+    name: flowforge-mongo-data
+  redis_data:
+    name: flowforge-redis-data
+
+# =============================================================================
+# Networks - Service Communication
+# =============================================================================
+networks:
+  flowforge-network:
+    name: flowforge-network
+    driver: bridge

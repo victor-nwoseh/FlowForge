@@ -1,0 +1,28 @@
+# Dependencies - will be installed in container
+node_modules
+
+# Build output - will be generated in container
+dist
+
+# Development files
+.env
+.env.local
+.env.development
+*.log
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+
+# Misc
+.DS_Store
+Thumbs.db

@@ -1,0 +1,63 @@
+# FlowForge Backend - Production Dockerfile
+# Multi-stage build for optimized image size
+
+# =============================================================================
+# Stage 1: Builder
+# Install all dependencies and compile TypeScript to JavaScript
+# =============================================================================
+FROM node:18-alpine AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files for dependency installation
+COPY package.json package-lock.json* ./
+
+# Install all dependencies (including devDependencies for build)
+# Using npm install for monorepo workspace compatibility
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# Build the NestJS application (compiles TypeScript to dist/)
+RUN npm run build
+
+# =============================================================================
+# Stage 2: Production
+# Minimal runtime image with only production dependencies
+# =============================================================================
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Set NODE_ENV to production
+ENV NODE_ENV=production
+
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install only production dependencies
+RUN npm install --omit=dev && npm cache clean --force
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nestjs -u 1001 && \
+    chown -R nestjs:nodejs /app
+
+# Switch to non-root user
+USER nestjs
+
+# Expose the application port
+EXPOSE 3001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3001/api/health || exit 1
+
+# Start the application
+CMD ["node", "dist/main.js"]

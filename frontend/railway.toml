@@ -10,6 +10,9 @@ dockerfilePath = "Dockerfile.production"
 # Number of instances (1 for free tier)
 numReplicas = 1
 
+# Explicit start command to override Railway's auto-detection
+startCommand = "sh /docker-entrypoint.sh"
+
 # Health check configuration
 healthcheckPath = "/"
 healthcheckTimeout = 60

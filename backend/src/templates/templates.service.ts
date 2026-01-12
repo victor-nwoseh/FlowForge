@@ -1,15 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
 import { Template, TemplateDocument } from './schemas/template.schema';
+import { seedTemplates } from './seeds/templates.seed';
 
 @Injectable()
-export class TemplatesService {
+export class TemplatesService implements OnModuleInit {
   constructor(
     @InjectModel(Template.name)
     private readonly templateModel: Model<TemplateDocument>,
   ) {}
+
+  async onModuleInit() {
+    await seedTemplates(this.templateModel);
+  }
 
   async findAll(category?: string): Promise<Template[]> {
     const filter: Record<string, any> = { isPublic: true };

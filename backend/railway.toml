@@ -1,0 +1,22 @@
+# FlowForge Backend - Railway Configuration
+# https://docs.railway.app/reference/config-as-code
+
+[build]
+# Use the production Dockerfile
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.production"
+
+[deploy]
+# Number of instances (1 for free tier)
+numReplicas = 1
+
+# Health check configuration
+healthcheckPath = "/api/health"
+healthcheckTimeout = 30
+
+# Restart policy
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Start command (optional - Dockerfile CMD is used by default)
+# startCommand = "node dist/main.js"

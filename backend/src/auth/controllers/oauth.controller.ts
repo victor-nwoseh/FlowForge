@@ -16,13 +16,15 @@ import { JwtAuthQueryGuard } from '../guards/jwt-auth-query.guard';
 
 @Controller('auth')
 export class OAuthController {
-  private readonly slackClientId: string;
-  private readonly slackClientSecret: string;
-  private readonly slackRedirectUri: string;
+  private readonly slackClientId: string | undefined;
+  private readonly slackClientSecret: string | undefined;
+  private readonly slackRedirectUri: string | undefined;
+  private readonly slackConfigured: boolean;
 
-  private readonly googleClientId: string;
-  private readonly googleClientSecret: string;
-  private readonly googleRedirectUri: string;
+  private readonly googleClientId: string | undefined;
+  private readonly googleClientSecret: string | undefined;
+  private readonly googleRedirectUri: string | undefined;
+  private readonly googleConfigured: boolean;
 
   private readonly frontendUrl: string;
 
@@ -30,29 +32,24 @@ export class OAuthController {
     private readonly configService: ConfigService,
     private readonly connectionsService: ConnectionsService,
   ) {
-    const slackClientId = this.configService.get<string>('SLACK_CLIENT_ID');
-    const slackClientSecret = this.configService.get<string>('SLACK_CLIENT_SECRET');
-    const slackRedirectUri = this.configService.get<string>('SLACK_REDIRECT_URI');
+    this.slackClientId = this.configService.get<string>('SLACK_CLIENT_ID');
+    this.slackClientSecret = this.configService.get<string>('SLACK_CLIENT_SECRET');
+    this.slackRedirectUri = this.configService.get<string>('SLACK_REDIRECT_URI');
 
-    const googleClientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
-    const googleClientSecret = this.configService.get<string>('GOOGLE_CLIENT_SECRET');
-    const googleRedirectUri = this.configService.get<string>('GOOGLE_REDIRECT_URI');
+    this.googleClientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
+    this.googleClientSecret = this.configService.get<string>('GOOGLE_CLIENT_SECRET');
+    this.googleRedirectUri = this.configService.get<string>('GOOGLE_REDIRECT_URI');
 
-    if (!slackClientId || !slackClientSecret || !slackRedirectUri) {
-      throw new Error('Slack OAuth configuration is missing');
+    // OAuth is now optional - app will start without it
+    this.slackConfigured = !!(this.slackClientId && this.slackClientSecret && this.slackRedirectUri);
+    this.googleConfigured = !!(this.googleClientId && this.googleClientSecret && this.googleRedirectUri);
+
+    if (!this.slackConfigured) {
+      console.warn('Slack OAuth not configured - Slack integration will be disabled');
     }
-
-    if (!googleClientId || !googleClientSecret || !googleRedirectUri) {
-      throw new Error('Google OAuth configuration is missing');
+    if (!this.googleConfigured) {
+      console.warn('Google OAuth not configured - Google integration will be disabled');
     }
-
-    this.slackClientId = slackClientId;
-    this.slackClientSecret = slackClientSecret;
-    this.slackRedirectUri = slackRedirectUri;
-
-    this.googleClientId = googleClientId;
-    this.googleClientSecret = googleClientSecret;
-    this.googleRedirectUri = googleRedirectUri;
 
     this.frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:5173');
   }
@@ -60,12 +57,16 @@ export class OAuthController {
   @Get('slack')
   @UseGuards(JwtAuthQueryGuard)
   async slackAuth(@Req() req: any, @Res() res: Response) {
+    if (!this.slackConfigured) {
+      return res.redirect(`${this.frontendUrl}/integrations?error=slack_not_configured`);
+    }
+
     const userId = req.user?.id ?? req.user?.userId;
 
     const slackAuthUrl = new URL('https://slack.com/oauth/v2/authorize');
-    slackAuthUrl.searchParams.set('client_id', this.slackClientId);
+    slackAuthUrl.searchParams.set('client_id', this.slackClientId!);
     slackAuthUrl.searchParams.set('scope', 'chat:write,channels:read,channels:join');
-    slackAuthUrl.searchParams.set('redirect_uri', this.slackRedirectUri);
+    slackAuthUrl.searchParams.set('redirect_uri', this.slackRedirectUri!);
     slackAuthUrl.searchParams.set('state', userId);
 
     return res.redirect(slackAuthUrl.toString());
@@ -77,13 +78,17 @@ export class OAuthController {
     @Query('state') userId: string,
     @Res() res: Response,
   ) {
+    if (!this.slackConfigured) {
+      return res.redirect(`${this.frontendUrl}/integrations?error=slack_not_configured`);
+    }
+
     try {
       const tokenResponse = await axios.post('https://slack.com/api/oauth.v2.access', null, {
         params: {
-          client_id: this.slackClientId,
-          client_secret: this.slackClientSecret,
+          client_id: this.slackClientId!,
+          client_secret: this.slackClientSecret!,
           code,
-          redirect_uri: this.slackRedirectUri,
+          redirect_uri: this.slackRedirectUri!,
         },
       });
 
@@ -108,11 +113,15 @@ export class OAuthController {
   @Get('google')
   @UseGuards(JwtAuthQueryGuard)
   async googleAuth(@Req() req: any, @Res() res: Response) {
+    if (!this.googleConfigured) {
+      return res.redirect(`${this.frontendUrl}/integrations?error=google_not_configured`);
+    }
+
     const userId = req.user?.id ?? req.user?.userId;
 
     const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-    googleAuthUrl.searchParams.set('client_id', this.googleClientId);
-    googleAuthUrl.searchParams.set('redirect_uri', this.googleRedirectUri);
+    googleAuthUrl.searchParams.set('client_id', this.googleClientId!);
+    googleAuthUrl.searchParams.set('redirect_uri', this.googleRedirectUri!);
     googleAuthUrl.searchParams.set('response_type', 'code');
     googleAuthUrl.searchParams.set(
       'scope',
@@ -131,12 +140,16 @@ export class OAuthController {
     @Query('state') userId: string,
     @Res() res: Response,
   ) {
+    if (!this.googleConfigured) {
+      return res.redirect(`${this.frontendUrl}/integrations?error=google_not_configured`);
+    }
+
     try {
       const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
-        client_id: this.googleClientId,
-        client_secret: this.googleClientSecret,
+        client_id: this.googleClientId!,
+        client_secret: this.googleClientSecret!,
         code,
-        redirect_uri: this.googleRedirectUri,
+        redirect_uri: this.googleRedirectUri!,
         grant_type: 'authorization_code',
       });
 

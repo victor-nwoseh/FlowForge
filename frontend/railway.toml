@@ -10,12 +10,9 @@ dockerfilePath = "Dockerfile.production"
 # Number of instances (1 for free tier)
 numReplicas = 1
 
-# Start command - nginx serves static files
-startCommand = "nginx -g 'daemon off;'"
-
 # Health check configuration
 healthcheckPath = "/"
-healthcheckTimeout = 30
+healthcheckTimeout = 60
 
 # Restart policy
 restartPolicyType = "ON_FAILURE"

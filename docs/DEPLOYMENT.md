@@ -19,96 +19,301 @@ Before deploying, ensure you have:
 
 ## Step 1: Set Up MongoDB Atlas
 
-MongoDB Atlas provides a free tier that's perfect for getting started.
+MongoDB Atlas provides a free tier (M0) that's perfect for getting started. The free tier includes 512MB storage, which is sufficient for thousands of workflows and executions.
 
 ### Create Account and Cluster
 
 1. Go to [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas)
-2. Click **Try Free** and create an account
-3. Choose your organization name
-4. Click **Create a cluster**
-5. Select **FREE - Shared** tier
-6. Choose a cloud provider (AWS recommended) and region closest to your users
-7. Click **Create Cluster** (takes 3-5 minutes to provision)
+2. Click **Try Free** and create an account (or sign in with Google)
+3. You'll be prompted to create an organization - enter a name (e.g., "FlowForge")
+4. Create a project name (e.g., "flowforge-production")
+5. Click **Build a Database**
+6. Select **M0 FREE** tier (Shared cluster)
+   - This provides 512MB storage, sufficient for initial deployment
+   - Can upgrade later without data loss
+7. Choose cloud provider and region:
+   - **Provider**: AWS (recommended for Railway) or Google Cloud (for Render)
+   - **Region**: Choose closest to your users or deployment platform
+   - US-East-1 (N. Virginia) is a good default for US-based deployments
+8. Cluster name: `flowforge-cluster` (or leave default `Cluster0`)
+9. Click **Create Cluster** (takes 3-5 minutes to provision)
 
 ### Create Database User
 
-1. In the left sidebar, click **Database Access**
+1. In the left sidebar under **Security**, click **Database Access**
 2. Click **Add New Database User**
-3. Choose **Password** authentication
-4. Enter a username (e.g., `flowforge-admin`)
-5. Click **Autogenerate Secure Password** and **copy the password**
-6. Under "Database User Privileges", select **Read and write to any database**
-7. Click **Add User**
+3. Authentication Method: **Password**
+4. Enter credentials:
+   - Username: `flowforge-admin` (or your preferred username)
+   - Password: Click **Autogenerate Secure Password**
+   - **IMPORTANT**: Copy this password immediately and save it securely!
+5. Database User Privileges: Select **Read and write to any database**
+6. Click **Add User**
+
+> **Save these credentials** - you'll need them for the connection string:
+> - Username: `flowforge-admin`
+> - Password: `[your-generated-password]`
 
 ### Configure Network Access
 
-1. In the left sidebar, click **Network Access**
+1. In the left sidebar under **Security**, click **Network Access**
 2. Click **Add IP Address**
 3. Click **Allow Access from Anywhere** (adds `0.0.0.0/0`)
-   - This is required for Railway/Render as their IPs change
-   - For production, consider using a VPN or private networking
-4. Click **Confirm**
+   - **Why**: Railway and Render use dynamic IP addresses that change frequently
+   - This is safe because authentication still requires username/password
+   - For enhanced security, your database user has limited privileges
+4. Add a comment: "Railway/Render deployment access"
+5. Click **Confirm**
+
+> **Security Note**: While `0.0.0.0/0` allows connections from any IP, your data is still protected by:
+> - Username/password authentication
+> - TLS encryption in transit
+> - Network-level DDoS protection from Atlas
 
 ### Get Connection String
 
-1. Go back to **Database** in the sidebar
-2. Click **Connect** on your cluster
-3. Select **Connect your application**
-4. Copy the connection string, it looks like:
+1. In the left sidebar, click **Database** (under Deployment)
+2. Wait for cluster status to show **Active** (green)
+3. Click **Connect** on your cluster
+4. Select **Drivers** (Connect your application)
+5. Driver: **Node.js**, Version: **6.7 or later** (or 4.1+ for older setups)
+6. Copy the connection string:
    ```
-   mongodb+srv://USERNAME:PASSWORD@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+   mongodb+srv://flowforge-admin:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
    ```
-5. Replace `USERNAME` and `PASSWORD` with your database user credentials
-6. Add the database name `flowforge` before the `?`:
+7. Modify the connection string:
+   - Replace `<password>` with your actual password (URL-encode special characters)
+   - Add database name `flowforge` before the `?`:
    ```
-   mongodb+srv://USERNAME:PASSWORD@cluster0.xxxxx.mongodb.net/flowforge?retryWrites=true&w=majority
+   mongodb+srv://flowforge-admin:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/flowforge?retryWrites=true&w=majority
    ```
-7. **Save this connection string** for your environment variables
+
+> **Password Special Characters**: If your password contains special characters like `@`, `#`, `%`, you must URL-encode them:
+> - `@` → `%40`
+> - `#` → `%23`
+> - `%` → `%25`
+> - Example: `p@ss#word` → `p%40ss%23word`
+
+### Test Your Connection
+
+Before deploying, verify the connection works:
+
+```bash
+# Install mongosh if not already installed
+npm install -g mongosh
+
+# Test connection (replace with your actual connection string)
+mongosh "mongodb+srv://flowforge-admin:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/flowforge"
+```
+
+If successful, you'll see the MongoDB shell prompt. Type `exit` to quit.
+
+### Create Database Indexes (Recommended)
+
+After your first deployment, create indexes for better query performance. Connect to your database and run:
+
+```javascript
+// Connect to your database first, then run:
+use flowforge
+
+// Index for workflows collection - speeds up user's workflow listing
+db.workflows.createIndex({ userId: 1 })
+db.workflows.createIndex({ userId: 1, isActive: 1 })
+
+// Index for executions collection - speeds up execution history queries
+db.executions.createIndex({ workflowId: 1 })
+db.executions.createIndex({ userId: 1 })
+db.executions.createIndex({ workflowId: 1, createdAt: -1 })
+db.executions.createIndex({ userId: 1, createdAt: -1 })
+
+// Index for connections collection - ensures one connection per service per user
+db.connections.createIndex({ userId: 1, service: 1 }, { unique: true })
+
+// Index for schedules collection
+db.schedules.createIndex({ workflowId: 1 })
+db.schedules.createIndex({ userId: 1 })
+
+// Verify indexes were created
+db.workflows.getIndexes()
+db.executions.getIndexes()
+db.connections.getIndexes()
+```
+
+> **Tip**: You can also create indexes via the Atlas UI:
+> 1. Click on your cluster → **Browse Collections**
+> 2. Select a collection → **Indexes** tab
+> 3. Click **Create Index**
+
+### MongoDB Atlas Checklist
+
+Before proceeding, verify:
+- [ ] Cluster status is **Active** (green checkmark)
+- [ ] Database user created with password saved
+- [ ] Network access configured for `0.0.0.0/0`
+- [ ] Connection string copied and modified with password + database name
+- [ ] Connection tested successfully (optional but recommended)
+
+**Your MongoDB connection string should look like:**
+```
+mongodb+srv://flowforge-admin:YourSecurePassword123@cluster0.abc123.mongodb.net/flowforge?retryWrites=true&w=majority
+```
 
 ---
 
 ## Step 2: Set Up Redis Cloud
 
-Redis Cloud provides a free tier for caching and queue storage.
+Redis is used by FlowForge for the Bull job queue (workflow execution) and can optionally be used for caching. The free tier (30MB) is sufficient for hundreds of concurrent workflow executions.
 
-### Option A: Redis Cloud
+### Option A: Redis Cloud (Recommended)
+
+Redis Cloud by Redis Labs offers a generous free tier with good performance.
+
+#### Create Account and Database
 
 1. Go to [redis.com/try-free](https://redis.com/try-free)
-2. Create an account
-3. Click **Create subscription**
-4. Select **Fixed plan** > **Free** tier
-5. Choose a cloud provider and region
+2. Click **Try Free** and create an account (or sign in with Google/GitHub)
+3. You'll be taken to the Redis Cloud console
+
+#### Create Free Subscription
+
+1. Click **New subscription** (or you may be prompted automatically)
+2. Select **Fixed plans**
+3. Choose **Free** tier (30MB)
+   - This includes:
+   - 30MB storage
+   - 30 connections
+   - No credit card required
+4. Choose cloud provider and region:
+   - **Provider**: AWS (recommended)
+   - **Region**: Choose **same region as your backend deployment**
+   - For Railway: US-East-1 is a good default
+   - For Render: US-East (Oregon) or US-West
+   - **Low latency tip**: Backend and Redis in same region = faster queue processing
+5. Subscription name: `flowforge-redis` (optional)
 6. Click **Create subscription**
-7. Once created, click on your database
-8. Copy the **Public endpoint** and **Default user password**
-9. Your Redis URL format:
-   ```
-   redis://default:password@host:port
-   ```
+
+#### Create Database
+
+1. After subscription is created, click **New database**
+2. Database name: `flowforge-queue`
+3. Leave other settings as default:
+   - Protocol: Redis
+   - Data persistence: None (default, fine for queues)
+4. Click **Create database**
+5. Wait for status to show **Active**
+
+#### Get Connection Details
+
+1. Click on your database name to view details
+2. Find and copy these values:
+   - **Public endpoint**: `redis-12345.c123.us-east-1-2.ec2.cloud.redislabs.com:12345`
+   - **Default user password**: Click **Copy** button next to password field
+
+3. Parse the endpoint into host and port:
+   - Full endpoint: `redis-12345.c123.us-east-1-2.ec2.cloud.redislabs.com:12345`
+   - **Host**: `redis-12345.c123.us-east-1-2.ec2.cloud.redislabs.com`
+   - **Port**: `12345` (the number after the colon)
+
+#### Configure Database Settings (Optional)
+
+For production optimization, configure these settings:
+
+1. Click on your database → **Configuration** tab
+2. **Data eviction policy**: Set to `allkeys-lru`
+   - This evicts least-recently-used keys when memory is full
+   - Prevents queue failures when approaching memory limit
+3. **Data persistence**: Keep as "None" for queue-only usage
+   - Queues are transient; jobs are recreated if lost
+   - Enable "Append Only File (AOF)" if you need persistence
 
 ### Option B: Upstash (Serverless Alternative)
 
+Upstash offers a serverless Redis with a generous free tier and pay-per-request pricing.
+
+#### Create Account and Database
+
 1. Go to [upstash.com](https://upstash.com)
-2. Create an account
+2. Click **Start for Free** and create an account
 3. Click **Create Database**
-4. Select a region
-5. Copy the **UPSTASH_REDIS_REST_URL** or standard Redis URL
-6. This is your `REDIS_URL`
+4. Configure:
+   - Name: `flowforge-queue`
+   - Type: **Regional** (lower latency) or Global
+   - Region: Choose closest to your deployment
+   - Enable **TLS** (recommended)
+5. Click **Create**
 
-### Connection Details
+#### Get Connection Details
 
-Save these for environment variables:
+1. Click on your database
+2. Find the **Redis** section (not REST API)
+3. Copy the connection details:
+   - **Endpoint**: `usw1-fast-toucan-12345.upstash.io`
+   - **Port**: `12345`
+   - **Password**: Click to reveal and copy
 
-| Variable | Example |
-|----------|---------|
-| `REDIS_HOST` | `redis-12345.c1.us-east-1-2.ec2.cloud.redislabs.com` |
-| `REDIS_PORT` | `12345` |
-| `REDIS_PASSWORD` | `yourpassword` |
+4. Or copy the full connection string:
+   ```
+   redis://default:YOUR_PASSWORD@usw1-fast-toucan-12345.upstash.io:12345
+   ```
 
-Or as a single URL:
+#### Upstash Free Tier Limits
+
+- 10,000 commands/day
+- 256MB max data size
+- 1 database per account (free tier)
+
+> **Note**: If you exceed 10K commands/day, consider upgrading or switching to Redis Cloud.
+
+### Test Your Redis Connection
+
+Before deploying, verify the connection works:
+
+```bash
+# Using redis-cli (if installed)
+redis-cli -h redis-12345.c123.us-east-1-2.ec2.cloud.redislabs.com -p 12345 -a YOUR_PASSWORD ping
+# Should return: PONG
+
+# Or using Node.js (quick test)
+node -e "
+const Redis = require('ioredis');
+const redis = new Redis({
+  host: 'YOUR_HOST',
+  port: YOUR_PORT,
+  password: 'YOUR_PASSWORD'
+});
+redis.ping().then(console.log).catch(console.error).finally(() => redis.quit());
+"
 ```
-REDIS_URL=redis://default:yourpassword@redis-12345.c1.us-east-1-2.ec2.cloud.redislabs.com:12345
+
+### Connection Details Summary
+
+Save these for your environment variables:
+
+| Variable | Example Value |
+|----------|---------------|
+| `REDIS_HOST` | `redis-12345.c123.us-east-1-2.ec2.cloud.redislabs.com` |
+| `REDIS_PORT` | `12345` |
+| `REDIS_PASSWORD` | `YourRedisPassword123` |
+
+Or as a single URL (some platforms prefer this format):
+```
+REDIS_URL=redis://default:YourRedisPassword123@redis-12345.c123.us-east-1-2.ec2.cloud.redislabs.com:12345
+```
+
+### Redis Cloud Checklist
+
+Before proceeding, verify:
+- [ ] Redis subscription created (Free tier)
+- [ ] Database status is **Active**
+- [ ] Copied host, port, and password
+- [ ] Region matches your backend deployment region
+- [ ] Connection tested successfully (optional but recommended)
+
+**Your Redis connection details should look like:**
+```
+Host: redis-12345.c123.us-east-1-2.ec2.cloud.redislabs.com
+Port: 12345
+Password: YourSecureRedisPassword
 ```
 
 ---

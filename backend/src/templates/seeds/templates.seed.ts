@@ -1,5 +1,5 @@
 import { Model } from 'mongoose';
-import { Template } from '../schemas/template.schema';
+import { TemplateDocument } from '../schemas/template.schema';
 
 const templates = [
   {
@@ -435,7 +435,7 @@ const templates = [
   },
 ];
 
-export async function seedTemplates(templateModel: Model<Template>) {
+export async function seedTemplates(templateModel: Model<TemplateDocument>) {
   const count = await templateModel.countDocuments();
   if (count > 0) {
     // eslint-disable-next-line no-console

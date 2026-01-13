@@ -1,5 +1,7 @@
 # FlowForge
 
+[![CI](https://github.com/victor-nwoseh/flowforge/actions/workflows/ci.yml/badge.svg)](https://github.com/victor-nwoseh/flowforge/actions/workflows/ci.yml)
+
 A no-code workflow automation platform with a visual builder, OAuth integrations, scheduling, and real-time monitoring. Build powerful automations by connecting services like Slack, Gmail, and Google Sheets without writing code.
 
 ## Overview

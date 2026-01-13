@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createTransport } from 'nodemailer';
+import { google } from 'googleapis';
 
 import { ExecutionContext } from '../../executions/interfaces/execution.interface';
 import {
@@ -82,31 +82,45 @@ export class EmailHandler implements INodeHandler {
         (connection.metadata as any)?.user ||
         'me';
 
-      const transporter = createTransport({
-        service: 'gmail',
-        auth: {
-          type: 'OAuth2',
-          user: fromEmail,
-          clientId,
-          clientSecret,
-          accessToken: connection.accessToken,
-          refreshToken: connection.refreshToken ?? undefined,
+      // Use Gmail API instead of SMTP (SMTP ports blocked on cloud providers)
+      const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
+      oauth2Client.setCredentials({
+        access_token: connection.accessToken,
+        refresh_token: connection.refreshToken ?? undefined,
+      });
+
+      const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+
+      // Build RFC 2822 formatted email
+      const emailLines = [
+        `To: ${processedTo}`,
+        `From: ${fromEmail}`,
+        `Subject: ${processedSubject}`,
+        'Content-Type: text/plain; charset=utf-8',
+        '',
+        processedBody,
+      ];
+      const email = emailLines.join('\r\n');
+
+      // Base64 URL-safe encode the email
+      const encodedEmail = Buffer.from(email)
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+      const response = await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: encodedEmail,
         },
       });
 
-      const mailOptions = {
-        from: fromEmail,
-        to: processedTo,
-        subject: processedSubject,
-        text: processedBody,
-      };
-
-      const info = await transporter.sendMail(mailOptions);
-      this.logger.log(`Email sent successfully: ${info.messageId}`);
+      this.logger.log(`Email sent successfully via Gmail API: ${response.data.id}`);
 
       return {
         success: true,
-        output: { sent: true, messageId: info.messageId },
+        output: { sent: true, messageId: response.data.id },
       };
     } catch (error: any) {
       const errorMessage = error?.message ?? 'Failed to send email.';

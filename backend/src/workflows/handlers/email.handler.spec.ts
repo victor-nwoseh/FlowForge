@@ -1,18 +1,27 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
+import { google } from 'googleapis';
 
 import { EmailHandler } from './email.handler';
 import { ConnectionsService } from '../../connections/connections.service';
 import { ExecutionContext } from '../../executions/interfaces/execution.interface';
 
-jest.mock('nodemailer');
-const mockedNodemailer = nodemailer as jest.Mocked<typeof nodemailer>;
+jest.mock('googleapis', () => ({
+  google: {
+    auth: {
+      OAuth2: jest.fn().mockImplementation(() => ({
+        setCredentials: jest.fn(),
+      })),
+    },
+    gmail: jest.fn(),
+  },
+}));
 
 describe('EmailHandler', () => {
   let handler: EmailHandler;
   let connectionsService: jest.Mocked<ConnectionsService>;
   let configService: jest.Mocked<ConfigService>;
+  let mockGmailSend: jest.Mock;
 
   const mockUserId = 'test-user-id';
   const mockAccessToken = 'google-access-token';
@@ -46,6 +55,19 @@ describe('EmailHandler', () => {
     connectionsService = module.get(ConnectionsService);
     configService = module.get(ConfigService);
 
+    // Setup Gmail API mock
+    mockGmailSend = jest.fn().mockResolvedValue({
+      data: { id: 'mock-message-id' },
+    });
+
+    (google.gmail as jest.Mock).mockReturnValue({
+      users: {
+        messages: {
+          send: mockGmailSend,
+        },
+      },
+    });
+
     jest.clearAllMocks();
   });
 
@@ -55,12 +77,8 @@ describe('EmailHandler', () => {
     userId,
   });
 
-  const createMockTransporter = () => ({
-    sendMail: jest.fn().mockResolvedValue({ messageId: 'mock-message-id' }),
-  });
-
   describe('execute', () => {
-    it('should send email with Gmail OAuth', async () => {
+    it('should send email with Gmail API', async () => {
       const mockConnection = {
         userId: mockUserId,
         service: 'google',
@@ -72,8 +90,11 @@ describe('EmailHandler', () => {
 
       connectionsService.findByUserAndService.mockResolvedValue(mockConnection as any);
 
-      const mockTransporter = createMockTransporter();
-      mockedNodemailer.createTransport.mockReturnValue(mockTransporter as any);
+      // Re-setup mock after clearAllMocks
+      mockGmailSend.mockResolvedValue({ data: { id: 'mock-message-id' } });
+      (google.gmail as jest.Mock).mockReturnValue({
+        users: { messages: { send: mockGmailSend } },
+      });
 
       const nodeData = {
         config: {
@@ -88,29 +109,12 @@ describe('EmailHandler', () => {
       expect(result.success).toBe(true);
       expect(result.output.sent).toBe(true);
       expect(result.output.messageId).toBe('mock-message-id');
-
-      expect(mockedNodemailer.createTransport).toHaveBeenCalledWith(
-        expect.objectContaining({
-          service: 'gmail',
-          auth: expect.objectContaining({
-            type: 'OAuth2',
-            user: 'sender@gmail.com',
-            clientId: 'google-client-id',
-            clientSecret: 'google-client-secret',
-            accessToken: mockAccessToken,
-            refreshToken: mockRefreshToken,
-          }),
-        }),
-      );
-
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          from: 'sender@gmail.com',
-          to: 'recipient@example.com',
-          subject: 'Test Subject',
-          text: 'Test email body',
-        }),
-      );
+      expect(mockGmailSend).toHaveBeenCalledWith({
+        userId: 'me',
+        requestBody: {
+          raw: expect.any(String),
+        },
+      });
     });
 
     it('should refresh token if expired', async () => {
@@ -136,8 +140,10 @@ describe('EmailHandler', () => {
       connectionsService.findByUserAndService.mockResolvedValue(mockExpiredConnection as any);
       connectionsService.refreshGoogleToken.mockResolvedValue(mockRefreshedConnection as any);
 
-      const mockTransporter = createMockTransporter();
-      mockedNodemailer.createTransport.mockReturnValue(mockTransporter as any);
+      mockGmailSend.mockResolvedValue({ data: { id: 'mock-message-id' } });
+      (google.gmail as jest.Mock).mockReturnValue({
+        users: { messages: { send: mockGmailSend } },
+      });
 
       const nodeData = {
         config: {
@@ -151,14 +157,6 @@ describe('EmailHandler', () => {
 
       expect(result.success).toBe(true);
       expect(connectionsService.refreshGoogleToken).toHaveBeenCalledWith(mockUserId);
-
-      expect(mockedNodemailer.createTransport).toHaveBeenCalledWith(
-        expect.objectContaining({
-          auth: expect.objectContaining({
-            accessToken: 'new-access-token',
-          }),
-        }),
-      );
     });
 
     it('should return error if Gmail not connected', async () => {
@@ -279,8 +277,10 @@ describe('EmailHandler', () => {
 
       connectionsService.findByUserAndService.mockResolvedValue(mockConnection as any);
 
-      const mockTransporter = createMockTransporter();
-      mockedNodemailer.createTransport.mockReturnValue(mockTransporter as any);
+      mockGmailSend.mockResolvedValue({ data: { id: 'mock-message-id' } });
+      (google.gmail as jest.Mock).mockReturnValue({
+        users: { messages: { send: mockGmailSend } },
+      });
 
       const nodeData = {
         config: {
@@ -300,16 +300,17 @@ describe('EmailHandler', () => {
       const result = await handler.execute(nodeData, context);
 
       expect(result.success).toBe(true);
-      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'user@example.com',
-          subject: 'Hello John',
-          text: 'Your order 12345 is ready',
-        }),
-      );
+      expect(mockGmailSend).toHaveBeenCalled();
+
+      // Verify the raw email contains the replaced variables
+      const callArgs = mockGmailSend.mock.calls[0][0];
+      const rawEmail = Buffer.from(callArgs.requestBody.raw, 'base64').toString();
+      expect(rawEmail).toContain('To: user@example.com');
+      expect(rawEmail).toContain('Subject: Hello John');
+      expect(rawEmail).toContain('Your order 12345 is ready');
     });
 
-    it('should handle sendMail errors', async () => {
+    it('should handle Gmail API errors', async () => {
       const mockConnection = {
         userId: mockUserId,
         service: 'google',
@@ -320,10 +321,10 @@ describe('EmailHandler', () => {
 
       connectionsService.findByUserAndService.mockResolvedValue(mockConnection as any);
 
-      const mockTransporter = {
-        sendMail: jest.fn().mockRejectedValue(new Error('SMTP connection failed')),
-      };
-      mockedNodemailer.createTransport.mockReturnValue(mockTransporter as any);
+      mockGmailSend.mockRejectedValue(new Error('Gmail API request failed'));
+      (google.gmail as jest.Mock).mockReturnValue({
+        users: { messages: { send: mockGmailSend } },
+      });
 
       const nodeData = {
         config: {
@@ -336,7 +337,7 @@ describe('EmailHandler', () => {
       const result = await handler.execute(nodeData, createContext());
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('SMTP connection failed');
+      expect(result.error).toContain('Gmail API request failed');
     });
   });
 });

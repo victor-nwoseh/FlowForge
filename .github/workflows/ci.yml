@@ -41,10 +41,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
 
-      - name: Install dependencies
-        run: rm -f package-lock.json && npm install
+      - name: Clean install dependencies
+        run: rm -rf node_modules package-lock.json && npm install
         working-directory: frontend
 
       - name: Build (includes TypeScript check)

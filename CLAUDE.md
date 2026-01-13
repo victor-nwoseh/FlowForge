@@ -262,7 +262,7 @@ The system supports `{{path}}` syntax throughout node configurations. Variables 
 
 ---
 
-## Session Continuity (Updated: January 2026)
+## Session Continuity (Updated: January 12, 2026)
 
 This section enables seamless resumption of development work across sessions.
 
@@ -302,8 +302,18 @@ This section enables seamless resumption of development work across sessions.
 - ✅ CHANGELOG.md with full version history (v0.1.0 to v1.0.0)
 - ✅ JSDoc comments added to 5 critical files
 
-**Remaining:**
-- ❌ Not deployed - Runs only on localhost, no CI/CD pipeline active
+**Week 6 Progress (Deployment Phase - IN PROGRESS):**
+- ✅ Production Dockerfiles created (multi-stage builds)
+- ✅ Railway deployment completed (backend + frontend)
+- ✅ MongoDB Atlas connected
+- ✅ Redis Cloud connected
+- ✅ OAuth configured (Slack + Google)
+- ✅ User registration/login working
+- ✅ Workflow creation working
+- ✅ Workflow execution working
+- ✅ Templates seeding on startup
+- ⚠️ WebSocket real-time updates - NOT WORKING (needs investigation)
+- ❌ GitHub Actions CI/CD - Not yet configured
 
 ### Week 6 Scope: Production Readiness
 
@@ -349,12 +359,32 @@ This section enables seamless resumption of development work across sessions.
 
 ### Current Session State
 
-**Date:** January 11, 2026
-**Phase:** Phase 1 COMPLETE, Phase 2 COMPLETE - Ready for Phase 3 (Deployment)
-**Last Action:** Completed all Phase 2 documentation tasks (Steps 13-22), added JSDoc to 5 files, verified unit tests pass (72/72)
-**Next Action:** Begin Phase 3 - Deployment (Docker production builds, Railway/Render deployment, GitHub Actions CI/CD)
+**Date:** January 12, 2026
+**Phase:** Phase 3 (Deployment) - IN PROGRESS
+**Last Action:** Completed Railway deployment, OAuth configuration, tested workflow execution
+**Next Action:** Debug WebSocket real-time updates issue, then set up GitHub Actions CI/CD
 
-**All Phase 2 files committed to git.**
+**Production URLs:**
+- **Frontend:** https://flowforge-frontend-production.up.railway.app
+- **Backend:** https://flowforge-backend-production.up.railway.app
+- **Health Check:** https://flowforge-backend-production.up.railway.app/api/health
+
+**Step 28 Verification Status:**
+| Test | Status | Notes |
+|------|--------|-------|
+| Railway project created | ✅ | Both services deployed |
+| Backend service running | ✅ | Health check passing |
+| Frontend service running | ✅ | Landing page loads |
+| Environment variables set | ✅ | All configured in Railway |
+| User registration/login | ✅ | Working |
+| Create workflow | ✅ | Working |
+| OAuth connections | ✅ | Slack + Google configured |
+| Execute workflow | ✅ | Completes successfully |
+| WebSocket real-time updates | ⚠️ | **NOT WORKING** - needs investigation |
+
+**Remaining Step 28 Task:**
+- Debug why WebSocket real-time updates don't show in the UI during execution
+- The execution completes successfully, but progress updates don't appear in real-time
 
 ### Phase 1 Testing - COMPLETE SUMMARY
 
@@ -455,6 +485,90 @@ cd backend && npm run test:cov    # Coverage report
 1. **UTF-16 Encoding:** README.md had null bytes - rewrote with UTF-8
 2. **GitHub Secret Scanning:** MongoDB connection string triggered alert - changed to obvious placeholders
 
+### Phase 3 Deployment - IN PROGRESS
+
+**Completed January 12, 2026**
+
+**Production Deployment Files Created:**
+| File | Purpose |
+|------|---------|
+| `backend/Dockerfile.production` | Multi-stage build for NestJS (node:18-alpine) |
+| `backend/railway.toml` | Railway deployment config with health check at `/api/health` |
+| `frontend/Dockerfile.production` | Multi-stage build with nginx:alpine |
+| `frontend/nginx.conf` | SPA routing, gzip compression, security headers |
+| `frontend/docker-entrypoint.sh` | Dynamic PORT handling for Railway |
+| `frontend/railway.toml` | Railway deployment config |
+
+**Cloud Services Configured:**
+| Service | Provider | Details |
+|---------|----------|---------|
+| Database | MongoDB Atlas | Cluster: flowforge-cluster.ipjhuvd.mongodb.net |
+| Cache/Queue | Redis Cloud | Host: redis-19680.c78.eu-west-1-2.ec2.cloud.redislabs.com:19680 |
+| Backend Hosting | Railway | flowforge-backend-production.up.railway.app |
+| Frontend Hosting | Railway | flowforge-frontend-production.up.railway.app |
+
+**Railway Backend Environment Variables:**
+```
+NODE_ENV=production
+PORT=3001
+MONGODB_URI=mongodb+srv://...@flowforge-cluster.ipjhuvd.mongodb.net/flowforge?retryWrites=true&w=majority
+REDIS_HOST=redis-19680.c78.eu-west-1-2.ec2.cloud.redislabs.com
+REDIS_PORT=19680
+REDIS_PASSWORD=<redis-password>
+JWT_SECRET=<jwt-secret>
+JWT_EXPIRES_IN=7d
+ENCRYPTION_KEY=<32-char-hex>
+FRONTEND_URL=https://flowforge-frontend-production.up.railway.app
+SLACK_CLIENT_ID=<slack-client-id>
+SLACK_CLIENT_SECRET=<slack-client-secret>
+SLACK_REDIRECT_URI=https://flowforge-backend-production.up.railway.app/api/auth/slack/callback
+GOOGLE_CLIENT_ID=<google-client-id>
+GOOGLE_CLIENT_SECRET=<google-client-secret>
+GOOGLE_REDIRECT_URI=https://flowforge-backend-production.up.railway.app/api/auth/google/callback
+```
+
+**Railway Frontend Environment Variables:**
+```
+PORT=80
+VITE_API_URL=https://flowforge-backend-production.up.railway.app/api
+VITE_WS_URL=wss://flowforge-backend-production.up.railway.app
+```
+
+**Issues Encountered and Fixed During Deployment:**
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| npm ci failing in Docker | npm workspaces lock file sync | Changed to `npm install` in Dockerfiles |
+| TypeScript CORS filter error | `filter(Boolean)` type inference | Used type predicate `(origin): origin is string => Boolean(origin)` |
+| Backend crash on startup | OAuth credentials required | Made OAuth optional with `slackConfigured`/`googleConfigured` flags |
+| Frontend 502 errors | PORT mismatch | Created `docker-entrypoint.sh` for dynamic PORT, set `PORT=80` explicitly |
+| "Cannot POST /auth/register" | Missing `/api` in VITE_API_URL | Added `/api` suffix to `VITE_API_URL` |
+| "Internal server error" on register | Malformed MONGODB_URI (space instead of ?) | Fixed to `...mongodb.net/flowforge?retryWrites=true...` |
+| Templates not showing | Seed function not called on startup | Added `OnModuleInit` to `TemplatesService` to call `seedTemplates()` |
+| TypeScript error in seed | Model type mismatch | Changed `Model<Template>` to `Model<TemplateDocument>` |
+| Webhook node fails on manual exec | Webhook handler expects URL | Use Variable node as first node for manual execution testing |
+
+**Code Changes Made During Deployment:**
+
+1. **backend/src/main.ts** - Added CORS support for `FRONTEND_URL` env var
+2. **backend/src/app.module.ts** - Added `REDIS_PASSWORD` support for Bull queue
+3. **backend/src/app.controller.ts** - Added `/api/health` endpoint
+4. **backend/src/auth/controllers/oauth.controller.ts** - Made OAuth optional (app runs without credentials)
+5. **backend/src/templates/templates.service.ts** - Added `OnModuleInit` for template seeding
+6. **backend/src/templates/seeds/templates.seed.ts** - Fixed type to use `TemplateDocument`
+
+**Known Issues (To Be Fixed):**
+1. **WebSocket real-time updates not showing in production UI**
+   - Execution completes successfully
+   - Logs appear after execution finishes
+   - Real-time progress updates during execution don't show
+   - Likely cause: `VITE_WS_URL` not connecting properly or Socket.io path issue
+   - Investigation needed: Check browser console for WebSocket connection errors
+
+2. **HTTP Request node in UI only shows label field**
+   - Node configuration panel may not be rendering all fields
+   - Workaround: Use Variable/Delay nodes for testing
+
 ### API Endpoints Reference
 
 ```
@@ -523,22 +637,27 @@ templates: { name, category, workflow, difficulty, tags, usageCount, timestamps 
 ### Resume Instructions
 
 When resuming development:
-1. Read this CLAUDE.md file for full context (especially "Current Session State")
-2. **Phase 1 (Testing) is 100% COMPLETE** - 124 tests passing, coverage verified
-3. **Phase 2 (Documentation) is 100% COMPLETE** - All docs created, JSDoc added
-4. **Next: Phase 3 (Deployment)** - Docker production builds, Railway/Render deployment, GitHub Actions CI/CD
+1. Read this CLAUDE.md file for full context (especially "Current Session State" and "Phase 3 Deployment")
+2. **Phase 1 (Testing) is 100% COMPLETE** - 124 tests passing
+3. **Phase 2 (Documentation) is 100% COMPLETE** - All docs created
+4. **Phase 3 (Deployment) is IN PROGRESS** - Railway deployed, but WebSocket issue remains
 5. Update "Current Session State" section at end of each session
 
-**Phase 3 Deployment Tasks (Suggested Order):**
-1. Create production Dockerfiles (multi-stage builds for backend + frontend)
-2. Set up MongoDB Atlas cluster (free tier)
-3. Set up Redis Cloud instance (free tier)
-4. Deploy backend to Railway or Render
-5. Deploy frontend to Vercel or Netlify (or same platform as backend)
-6. Configure environment variables on hosting platform
-7. Set up GitHub Actions CI/CD workflow
-8. Test deployed application end-to-end
-9. Update README with live demo URL
+**Immediate Next Steps:**
+1. **Debug WebSocket real-time updates** - Check browser console for connection errors, verify `VITE_WS_URL` is correct
+2. **Test OAuth connections** - Verify Slack and Google OAuth work in production
+3. **Set up GitHub Actions CI/CD** - Automate testing and deployment
+4. **Update README** - Add live demo URL
+
+**Production App Access:**
+- Frontend: https://flowforge-frontend-production.up.railway.app
+- Backend API: https://flowforge-backend-production.up.railway.app/api
+- Health Check: https://flowforge-backend-production.up.railway.app/api/health
+
+**Test Workflow for Manual Execution (avoid Webhook node bug):**
+```
+Variable (key: test, value: hello) → Delay (2000ms) → Delay (1000ms) → Variable (key: status, value: done)
+```
 
 ### Quick Verification Commands
 

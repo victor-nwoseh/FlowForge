@@ -10,7 +10,7 @@ type Progress = {
 };
 
 /** WebSocket server URL - connects to NestJS backend */
-const SOCKET_URL = 'http://localhost:3001';
+const SOCKET_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
 
 /**
  * useExecutionSocket - React hook for real-time workflow execution monitoring.

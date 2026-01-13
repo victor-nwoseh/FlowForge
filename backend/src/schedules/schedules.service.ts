@@ -104,9 +104,10 @@ export class SchedulesService {
       throw new BadRequestException('Schedule already exists for this workflow');
     }
 
+    const nextRun = this.computeNextRun(cronExpression);
     const job = await this.workflowQueue.add(
       { workflowId, userId, triggerSource: 'scheduled' },
-      { repeat: { cron: cronExpression }, jobId: `schedule_${workflowId}` },
+      { repeat: { cron: cronExpression, startDate: nextRun || undefined }, jobId: `schedule_${workflowId}` },
     );
 
     const repeatableJobId = job.opts.repeat?.key;
@@ -189,9 +190,10 @@ export class SchedulesService {
     }
 
     if (isActive) {
+      const nextRun = this.computeNextRun(schedule.cronExpression);
       const job = await this.workflowQueue.add(
         { workflowId: schedule.workflowId, userId, triggerSource: 'scheduled' },
-        { repeat: { cron: schedule.cronExpression }, jobId: `schedule_${schedule.workflowId}` },
+        { repeat: { cron: schedule.cronExpression, startDate: nextRun || undefined }, jobId: `schedule_${schedule.workflowId}` },
       );
       schedule.repeatableJobId = job.opts.repeat?.key;
       schedule.nextRunAt = this.computeNextRun(schedule.cronExpression) || undefined;

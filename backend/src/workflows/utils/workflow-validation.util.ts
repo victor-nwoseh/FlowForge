@@ -1,4 +1,5 @@
 const SUPPORTED_NODE_TYPES = new Set([
+  'trigger',
   'http',
   'delay',
   'condition',

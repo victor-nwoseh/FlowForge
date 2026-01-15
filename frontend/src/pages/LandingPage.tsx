@@ -120,10 +120,17 @@ const LandingPage: React.FC = () => {
               </p>
 
               {/* CTA */}
-              <div className="animate-hero-entrance hero-delay-4">
+              <div className="animate-hero-entrance hero-delay-4 flex items-center justify-center gap-4">
                 <LiquidMetalButton to="/register" size="lg">
                   Start Building Free
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
+                </LiquidMetalButton>
+                <LiquidMetalButton
+                  href="https://drive.google.com/file/d/1p-NlPutYT7if5ugHHAU6WNTY3nLL8x6x/view?usp=sharing"
+                  size="lg"
+                  variant="outline"
+                >
+                  View Demo
                 </LiquidMetalButton>
               </div>
 

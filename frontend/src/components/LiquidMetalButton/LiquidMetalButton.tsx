@@ -175,9 +175,11 @@ const LiquidMetalButton: React.FC<LiquidMetalButtonProps> = ({
 
   if (href) {
     return (
-      <a 
-        href={href} 
-        className={baseClasses} 
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={baseClasses}
         style={style}
         onMouseEnter={(e) => {
           handleMouseEnter();

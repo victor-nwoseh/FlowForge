@@ -70,7 +70,7 @@ describe('SchedulesService', () => {
 
       expect(workflowQueue.add).toHaveBeenCalledWith(
         { workflowId: mockWorkflowId, userId: mockUserId, triggerSource: 'scheduled' },
-        { repeat: { cron: validCronExpression }, jobId: `schedule_${mockWorkflowId}` },
+        { repeat: { cron: validCronExpression, startDate: expect.any(Date) }, jobId: `schedule_${mockWorkflowId}` },
       );
 
       expect(scheduleModel.create).toHaveBeenCalledWith(
@@ -214,7 +214,7 @@ describe('SchedulesService', () => {
       expect(workflowQueue.add).toHaveBeenCalledWith(
         { workflowId: mockWorkflowId, userId: mockUserId, triggerSource: 'scheduled' },
         expect.objectContaining({
-          repeat: { cron: validCronExpression },
+          repeat: { cron: validCronExpression, startDate: expect.any(Date) },
         }),
       );
       expect(existingSchedule.isActive).toBe(true);

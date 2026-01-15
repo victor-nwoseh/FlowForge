@@ -13,9 +13,11 @@ numReplicas = 1
 # Start command
 startCommand = "node dist/main.js"
 
-# Health check configuration - increased timeout for cold starts
+# Health check configuration
 healthcheckPath = "/api/health"
 healthcheckTimeout = 120
+# Wait 30 seconds before starting health checks to allow DB connections to establish
+healthcheckStartPeriod = 30
 
 # Restart policy
 restartPolicyType = "ON_FAILURE"

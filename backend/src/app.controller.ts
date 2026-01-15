@@ -6,8 +6,11 @@ import Redis from 'ioredis';
 @Controller()
 export class AppController {
   private redisClient: Redis;
+  private readonly startTime: number;
+  private readonly startupGracePeriodMs = 30000; // 30 seconds grace period for connections
 
   constructor(@InjectConnection() private readonly mongoConnection: Connection) {
+    this.startTime = Date.now();
     // Create Redis client for health checks
     this.redisClient = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
@@ -50,8 +53,13 @@ export class AppController {
     }
 
     // Determine overall status
+    const isStartingUp = Date.now() - this.startTime < this.startupGracePeriodMs;
     if (health.mongodb === 'disconnected' || health.redis === 'disconnected') {
       health.status = 'degraded';
+      // During startup grace period, return 200 to pass health checks while connections establish
+      if (isStartingUp) {
+        return { ...health, note: 'Starting up, connections establishing...' };
+      }
       throw new HttpException(health, HttpStatus.SERVICE_UNAVAILABLE);
     }
 

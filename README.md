@@ -13,10 +13,10 @@ A production multi-tenant SaaS workflow automation platform with 124 automated t
 
 ### 🚀 **Production Deployment**
 
-**Live Application:** [flowforge-frontend-production.up.railway.app](https://flowforge-frontend-production.up.railway.app/)
-**Demo Video:** [Watch 2 minute walkthrough](https://drive.google.com/file/d/1p-NlPutYT7if5ugHHAU6WNTY3nLL8x6x/view?usp=sharing)
-**Test Coverage:** 124 tests (72 unit, 52 E2E) across 12 test suites with 85%+ coverage on critical services
-**CI/CD:** Automated testing and deployment via GitHub Actions
+**Live Application:** [flowforge-frontend-production.up.railway.app](https://flowforge-frontend-production.up.railway.app/)<br>
+**Demo Video:** [Watch 2 minute walkthrough](https://drive.google.com/file/d/1p-NlPutYT7if5ugHHAU6WNTY3nLL8x6x/view?usp=sharing)<br>
+**Test Coverage:** 124 tests (72 unit, 52 E2E) across 12 test suites with 85%+ coverage on critical services<br>
+**CI/CD:** Automated testing and deployment via GitHub Actions<br>
 **Architecture:** Multi-tenant with AES-256 encrypted OAuth tokens, real-time WebSocket monitoring, Redis-backed job queues
 
 ---

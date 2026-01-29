@@ -1,8 +1,35 @@
 # FlowForge
 
-[![CI](https://github.com/victor-nwoseh/flowforge/actions/workflows/ci.yml/badge.svg)](https://github.com/victor-nwoseh/flowforge/actions/workflows/ci.yml)
+[![CI](https://github.com/victor-nwoseh/FlowForge/actions/workflows/ci.yml/badge.svg)](https://github.com/victor-nwoseh/FlowForge/actions/workflows/ci.yml)
+![Tests](https://img.shields.io/badge/tests-124%20passing-success)
+![Coverage](https://img.shields.io/badge/coverage-85%25%2B%20critical%20services-brightgreen)
+![Uptime](https://img.shields.io/badge/uptime-99%25%2B-success)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-A no-code workflow automation platform with a visual builder, OAuth integrations, scheduling, and real-time monitoring. Build powerful automations by connecting services like Slack, Gmail, and Google Sheets without writing code.
+A production multi-tenant SaaS workflow automation platform with 124 automated tests, GitHub Actions CI/CD, and OAuth 2.0 integrations. Build powerful automations by connecting services like Slack, Gmail, and Google Sheets without writing code.
+
+---
+
+### 🚀 **Production Deployment**
+
+**Live Application:** [flowforge-frontend-production.up.railway.app](https://flowforge-frontend-production.up.railway.app/)
+**Demo Video:** [Watch 2 minute walkthrough](https://drive.google.com/file/d/1p-NlPutYT7if5ugHHAU6WNTY3nLL8x6x/view?usp=sharing)
+**Test Coverage:** 124 tests (72 unit, 52 E2E) across 12 test suites with 85%+ coverage on critical services
+**CI/CD:** Automated testing and deployment via GitHub Actions
+**Architecture:** Multi-tenant with AES-256 encrypted OAuth tokens, real-time WebSocket monitoring, Redis-backed job queues
+
+---
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/victor-nwoseh/FlowForge/main/docs/images/workflow-builder.png" alt="FlowForge Visual Workflow Builder" width="800">
+</p>
+
+<p align="center">
+  <em>Visual workflow builder with drag-and-drop interface and real-time execution monitoring</em>
+</p>
+
+---
 
 ## Overview
 

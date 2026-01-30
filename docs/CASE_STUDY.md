@@ -568,11 +568,11 @@ The CI pipeline prevents broken code from being merged and gives me confidence t
 
 Before deploying, I ensured:
 
-✅ **Environment variables managed securely** - Never committed `.env`, used Railway's environment variable UI
-✅ **CORS configured** for production domain - `FRONTEND_URL` in backend config
-✅ **MongoDB indexes created** for performance - Indexed `userId` on all user-scoped collections
-✅ **OAuth redirect URIs updated** - Slack and Google OAuth configured with production callback URLs
-✅ **Health endpoint** for Railway monitoring - Returns service status, MongoDB connection, Redis connection, uptime
+✅ **Environment variables managed securely** - Never committed `.env`, used Railway's environment variable UI<br>
+✅ **CORS configured** for production domain - `FRONTEND_URL` in backend config<br>
+✅ **MongoDB indexes created** for performance - Indexed `userId` on all user-scoped collections<br>
+✅ **OAuth redirect URIs updated** - Slack and Google OAuth configured with production callback URLs<br>
+✅ **Health endpoint** for Railway monitoring - Returns service status, MongoDB connection, Redis connection, uptime<br>
 ✅ **Error logging** for production debugging - Structured logs with timestamps and request IDs
 
 ### Health Monitoring
@@ -667,9 +667,9 @@ If you're looking for a developer who can:
 
 **I'd love to connect.**
 
-📧 **Email:** victor.nwoseh05@gmail.com
-🔗 **LinkedIn:** [linkedin.com/in/victor-nwoseh](https://linkedin.com/in/victor-nwoseh/)
-💼 **Portfolio:** [victor-nwoseh.vercel.app](https://victor-nwoseh.vercel.app/)
+📧 **Email:** victor.nwoseh05@gmail.com<br>
+🔗 **LinkedIn:** [linkedin.com/in/victor-nwoseh](https://linkedin.com/in/victor-nwoseh/)<br>
+💼 **Portfolio:** [victor-nwoseh.vercel.app](https://victor-nwoseh.vercel.app/)<br>
 💻 **GitHub:** [github.com/victor-nwoseh](https://github.com/victor-nwoseh)
 
 ---

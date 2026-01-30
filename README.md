@@ -335,6 +335,7 @@ The architecture documentation includes:
 
 ### Additional Documentation
 
+- [**Case Study**](docs/CASE_STUDY.md) - How I built FlowForge: technical challenges, decisions, and lessons learned
 - [API Reference](docs/API.md) - Complete REST API documentation
 - [User Guide](docs/USER_GUIDE.md) - How to create workflows and connect integrations
 - [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment instructions

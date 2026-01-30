@@ -6,6 +6,7 @@
 ![Uptime](https://img.shields.io/badge/uptime-99%25%2B-success)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+[![Documentation](https://img.shields.io/badge/docs-architecture-blue)](https://github.com/victor-nwoseh/FlowForge/blob/main/docs/ARCHITECTURE.md)
 
 A production multi-tenant SaaS workflow automation platform with 124 automated tests, GitHub Actions CI/CD, and OAuth 2.0 integrations. Build powerful automations by connecting services like Slack, Gmail, and Google Sheets without writing code.
 
@@ -309,9 +310,31 @@ For detailed deployment instructions, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.m
 - **Docker** - Production-ready multi-stage Dockerfiles included
 - **Manual** - Deploy to any Node.js hosting with MongoDB and Redis access
 
-## Documentation
+## 📚 Documentation
 
-- [Architecture Overview](docs/ARCHITECTURE.md) - System design and data flow diagrams
+FlowForge includes comprehensive technical documentation covering architecture, API design, and deployment.
+
+### Architecture & System Design
+
+**[📖 Read Full Architecture Documentation](docs/ARCHITECTURE.md)**
+
+The architecture documentation includes:
+- **System Overview** - High-level component interactions
+- **Architecture Diagrams** - Mermaid flowcharts showing data flow
+- **Sequence Diagrams** - Authentication, OAuth, and execution flows
+- **Database Schema** - Complete ER diagrams and collection structure
+- **Security Architecture** - Multi-tenant isolation and encryption
+- **Technology Decisions** - Rationale for framework and tool choices
+
+**Key Architectural Highlights:**
+- Multi-tenant SaaS with per-user OAuth token isolation
+- Queue-based execution (Bull/Redis) for horizontal scalability
+- Real-time WebSocket monitoring via Socket.io
+- AES-256 encrypted credential storage
+- Topological sort for dependency-aware node execution
+
+### Additional Documentation
+
 - [API Reference](docs/API.md) - Complete REST API documentation
 - [User Guide](docs/USER_GUIDE.md) - How to create workflows and connect integrations
 - [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment instructions

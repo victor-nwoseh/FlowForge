@@ -659,7 +659,7 @@ Building FlowForge taught me more than any tutorial or course could. Over 10 wee
 - Implemented complex algorithms (topological sort, variable replacement, WebSocket pub/sub)
 
 If you're looking for a developer who can:
-- Build production software independently
+- Build production software
 - Write comprehensive tests from day one
 - Make intentional architectural decisions
 - Document systems clearly for team collaboration
